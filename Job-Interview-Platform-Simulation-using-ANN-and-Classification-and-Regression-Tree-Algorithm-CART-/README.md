@@ -1,1 +1,0 @@
-# Job-Interview-Platform-Simulation-using-ANN-and-Classification-and-Regression-Tree-Algorithm-CART-
