@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify OTP</title>
+
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-image: url("{{ url_for('static', filename='bg.png') }}");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      height: 100vh;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      background: white;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 10px 18px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 450px;
+      height: auto;
+      text-align: center;
+    }
+
+    h3 {
+      font-size: 32px;
+      margin-bottom: 30px;
+    }
+
+    .form-group {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .form-group input {
+      width: 95%;
+      padding: 12px 15px;
+      border-radius: 30px;
+      border: 1px solid #ddd;
+      background: #f1f1f1;
+      font-size: 15px;
+      transition: 0.3s ease;
+    }
+
+    .form-group input:focus {
+      border-color: #00796b;
+      outline: none;
+      background: #e7f2f0;
+    }
+
+    .form-group input.error {
+      border: 2px solid #e53935;
+      background: #ffeaea;
+    }
+
+    .btn-verify {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 30px;
+      background-color: #5e686d;
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s ease;
+    }
+
+    .btn-verify:hover {
+      background-color: #00796b;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0, 150, 136, 0.4);
+    }
+
+    .btn-resend {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 30px;
+      background-color: #f44336;
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s ease;
+      margin-top: 15px;
+    }
+
+    .btn-resend:hover {
+      background-color: #c62828;
+    }
+
+    .btn-resend:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    .error-message {
+      background-color: #ffe5e5;
+      color: #c62828;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      width: 80%;
+      margin-left: auto;
+      margin-right: auto;
+      font-size: 14px;
+    }
+
+    .success-message {
+      background-color: #e8f5e8;
+      color: #2e7d32;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      width: 80%;
+      margin-left: auto;
+      margin-right: auto;
+      font-size: 14px;
+    }
+
+    .info-message {
+      background-color: #e3f2fd;
+      color: #1976d2;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      width: 80%;
+      margin-left: auto;
+      margin-right: auto;
+      font-size: 14px;
+    }
+  </style>
+
+</head>
+<body>
+
+  <div class="container">
+    <h1>OTP Verification</h1>
+    <p>Email: {{ email }}</p>
+    <p>We've sent an OTP to your email. Please check your inbox. Thank you!</p>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="{% if category == 'error' %}error-message{% elif category == 'success' %}success-message{% else %}info-message{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form id="otpForm" method="POST">
+      <div class="form-group">
+        <input type="number" name="otp" placeholder="Enter 6-digit OTP" required maxlength="6">
+      </div>
+
+      <button type="submit" class="btn-verify">Verify OTP</button>
+    </form>
+
+    <button type="button" id="resendBtn" class="btn-resend">Resend OTP</button>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const otpInput = document.querySelector('input[name="otp"]');
+      const resendButton = document.getElementById('resendBtn');
+      const otpForm = document.getElementById('otpForm');
+      let countdown = 30;
+      let countdownInterval;
+
+      // Function to start countdown
+      const startCountdown = () => {
+        resendButton.disabled = true;
+        resendButton.textContent = `Resend OTP in ${countdown}s`;
+
+        countdownInterval = setInterval(() => {
+          countdown--;
+          resendButton.textContent = `Resend OTP in ${countdown}s`;
+
+          if (countdown <= 0) {
+            clearInterval(countdownInterval);
+            resendButton.disabled = false;
+            resendButton.textContent = "Resend OTP";
+            countdown = 30;
+          }
+        }, 1000);
+      };
+
+      // Start countdown when the page loads
+      startCountdown();
+
+      // Resend OTP Button
+      resendButton.addEventListener('click', () => {
+        fetch('/resend_otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: "{{ email }}" })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert("OTP has been resent to your email.");
+            startCountdown(); // Restart cooldown
+            // Stay on the same page - DO NOT redirect to /reset
+          } else {
+            alert(data.message || "Failed to resend OTP.");
+          }
+        })
+        .catch(error => {
+          console.error("Error:", error);
+          alert("Something went wrong. Please try again.");
+        });
+      });
+
+      // OTP Form Validation (client-side only - let server handle verification)
+      otpForm.addEventListener('submit', (e) => {
+        const otpValue = otpInput.value.trim();
+
+        // Basic validation - just check if it's 6 digits
+        if (!otpValue || otpValue.length !== 6 || isNaN(otpValue)) {
+          e.preventDefault(); // Prevent form submission
+          otpInput.classList.add('error');
+          alert('Please enter a valid 6-digit OTP.');
+          return false;
+        } else {
+          otpInput.classList.remove('error');
+          // Let the form submit to the server for actual verification
+        }
+      });
+
+      // Remove error styling when user types
+      otpInput.addEventListener('input', () => {
+        const otpValue = otpInput.value.trim();
+        if (otpValue && otpValue.length <= 6 && !isNaN(otpValue)) {
+          otpInput.classList.remove('error');
+        }
+      });
+
+      // Limit input to 6 digits
+      otpInput.addEventListener('input', () => {
+        if (otpInput.value.length > 6) {
+          otpInput.value = otpInput.value.slice(0, 6);
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>

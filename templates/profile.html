@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        /* Existing styles remain the same */
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --text-light: #f8f9fa;
+            --text-dark: #212529;
+            --bg-light: #f8f9fa;
+            --bg-dark: #121212;
+            --card-light: #ffffff;
+            --card-dark: #2c2c2c;
+            --sidebar-light: #f0f0f0;
+            --sidebar-dark: #2d3748;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
+        }
+
+        body {
+            background: url("{{ url_for('static', filename = 'bg.png')}}") no-repeat center center fixed;
+            background-size: cover;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body .user-name{
+            color: #ffffff;
+        }
+        body.dark {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+        }
+
+        /* Header Styling */
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background-color:#1E3E62;
+            border-bottom: 1px solid #e0e0e0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: var(--transition);
+            position: relative;
+            z-index: 100;
+        }
+
+        body.dark .topbar {
+            background-color: rgba(33, 33, 33, 0.95);
+            border-color: #444;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .logo::before {
+            content: "📊";
+            font-size: 1.5rem;
+        }
+
+        .right {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        /* User profile section */
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .user-info {
+            line-height: 1.3;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .date-time {
+            font-size: 0.8rem;
+            color: #666;
+            transition: var(--transition);
+        }
+
+        body.dark .date-time {
+            color: #aaa;
+        }
+
+        /* Theme toggle button */
+        .toggle-theme {
+            cursor: pointer;
+            background-color: #e9ecef;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: var(--transition);
+            border: none;
+        }
+
+        body.dark .toggle-theme {
+            background-color: #495057;
+            color: var(--text-light);
+        }
+
+        .toggle-theme:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Menu icon */
+        .menu-icon {
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: var(--transition);
+        }
+
+        .menu-icon div {
+            width: 25px;
+            height: 3px;
+            background-color: var(--text-dark);
+            transition: var(--transition);
+        }
+
+        body.dark .menu-icon div {
+            background-color: var(--text-light);
+        }
+
+        .menu-icon:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        body.dark .menu-icon:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Main content area */
+        .container {
+            display: flex;
+            flex-grow: 1;
+            position: relative;
+        }
+
+        /* Sidebar */
+            .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-light);
+            backdrop-filter: blur(15px);
+            box-shadow: 2px 0 30px rgba(0, 0, 0, 0.1);
+            transform: translateX(-100%);
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: fixed;
+            height: 100%;
+            top: 80px;
+            bottom: 0;
+            left: 0;
+            z-index: 999;
+            overflow-y: auto;
+            gap: 1.5rem;
+            padding: 2rem 1.5rem;
+            border-right: 1px solid rgba(90, 103, 216, 0.1);
+        }
+
+        
+
+
+        .sidebar.show {
+            transform: translateX(0);
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(90, 103, 216, 0.3);
+            border-radius: 3px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(90, 103, 216, 0.5);
+        }
+            body.dark .sidebar {
+                background-color: #1E3E62;
+            }
+
+        
+
+        .applicant-profile {
+            padding: 1rem;
+                background: rgba(255, 255, 255, 0.8);
+                border-radius: 12px;
+                margin-bottom: 1rem;
+                margin-top: 1rem;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+                transition: var(--transition);
+                animation: slideInFromTop 0.6s ease-out;
+        }
+
+        body.dark .applicant-profile {
+            background: rgba(45, 55, 72, 0.8);
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .profile-photo {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4361ee, #3a0ca3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .profile-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .profile-role {
+            font-size: 0.85rem;
+            color: #555;
+            transition: var(--transition);
+        }
+
+        body.dark .profile-role {
+            color: #bbb;
+        }
+
+        .profile-info {
+            margin-top: 1rem;
+        }
+
+        .info-item {
+            display: flex;
+            margin-bottom: 0.8rem;
+            font-size: 0.95rem;
+        }
+
+        .info-label {
+            font-weight: 600;
+            width: 80px;
+            color: #555;
+            transition: var(--transition);
+        }
+
+        body.dark .info-label {
+            color: #bbb;
+        }
+
+        .info-value {
+            flex: 1;
+            word-break: break-word;
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            color: var(--text-dark);
+            text-decoration: none;
+            transition: #79a1b8;
+            font-weight: 500;
+        }
+
+        body.dark .nav-link {
+            color: var(--text-light);
+        }
+
+        .nav-link:hover {
+            background-color: rgba(67, 97, 238, 0.1);
+            color: var(--primary-color);
+        }
+
+        body.dark .nav-link:hover {
+            background-color: rgba(67, 97, 238, 0.2);
+        }
+
+        .nav-link.active {
+            background-color: #79a1b8;
+            color: white;
+        }
+
+        /* Main content */
+        .main-content {
+            flex-grow: 1;
+            padding: 2rem;
+            margin-left: 0;
+            transition: var(--transition);
+        }
+
+        .sidebar.show ~ .main-content {
+            margin-left: 260px;
+        }
+
+        /* Dashboard cards */
+        .applicant-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+
+        .card {
+            background-color: var(--card-light);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            transition: var(--transition);
+            overflow: hidden;
+        }
+
+        body.dark .card {
+            background-color: var(--card-dark);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #79a1b8;
+        }
+
+        .card-icon {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, rgba(67, 97, 238, 0.2), rgba(58, 12, 163, 0.2));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .card-content {
+            margin-bottom: 1.5rem;
+        }
+
+        .rating-container {
+            margin-top: 1rem;
+        }
+
+        .rating-label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .rating-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+
+        .rating-description {
+            margin-bottom: 1.5rem;
+            color: #555;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        body.dark .rating-description {
+            color: #aaa;
+        }
+
+        .status-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background-color: rgba(16, 185, 129, 0.1);
+            border-radius: 8px;
+            width: fit-content;
+            margin-bottom: 1rem;
+        }
+
+        .status-container.qualified {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+
+        .status-container.review {
+            background-color: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+        }
+
+        .status-container.not-qualified {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .status-icon {
+            font-size: 1.2rem;
+        }
+
+        .status-text {
+            font-weight: 600;
+        }
+
+        .action-button {
+            display: block;
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background-color:#5c6c7d;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+            text-decoration: none;
+            margin-top: 0.5rem;
+        }
+
+        .action-button:hover {
+            background-color: #1E3E62;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Progress bar */
+        .progress-container {
+            margin-top: 1.5rem;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .progress-bar {
+            height: 10px;
+            width: 100%;
+            background-color: #e9ecef;
+            border-radius: 50px;
+            overflow: hidden;
+        }
+
+        body.dark .progress-bar {
+            background-color: #444;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            width: 60%;
+            border-radius: 50px;
+            transition: width 1s ease-in-out;
+        }
+
+        /* Applicant header */
+        .applicant-header {
+            margin-bottom: 2rem;
+        }
+
+        .applicant-heading {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .applicant-subtext {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        body.dark .applicant-subtext {
+            color: #aaa;
+        }
+
+        /* Responsive adjustments */
+        @media screen and (max-width: 992px) {
+            .sidebar.show ~ .main-content {
+                margin-left: 0;
+            }
+            
+            .sidebar {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+
+        @media screen and (max-width: 768px) {
+            .topbar {
+                padding: 0.8rem 1.5rem;
+            }
+            
+            .applicant-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .applicant-heading {
+                font-size: 1.5rem;
+            }
+            
+            .sidebar {
+                width: 100%;
+                max-width: 100%;
+            }
+        }
+
+        @media screen and (max-width: 576px) {
+            .right {
+                gap: 0.8rem;
+            }
+            
+            .user-profile {
+                display: none;
+            }
+            
+            .main-content {
+                padding: 1.5rem 1rem;
+            }
+        }
+
+        .chatbot-btn {
+            margin-top: 30px;
+            padding: 12px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            background-color: #4caf50;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .chatbot-btn:hover {
+            background-color: #388e3c;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Status badge styling */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin: 8px 0;
+        }
+        
+        .status-badge.eligible {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+        
+        .status-badge.not-eligible {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        /* Profile-specific styles for better layout */
+        .profile-container {
+            max-width: 900px; /* Limit width for readability */
+            margin: 0 auto; /* Center the container */
+            padding: 2rem;
+            background-color: var(--bg-light); /* Ensure background for dark mode */
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            transition: var(--transition);
+        }
+
+        body.dark .profile-container {
+            background-color: var(--bg-dark);
+        }
+
+        .profile-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .profile-title {
+            font-size: 2.5rem;
+            color: #1E3E62;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .profile-subtitle {
+            font-size: 1.1rem;
+            color: #666;
+        }
+
+        body.dark .profile-subtitle {
+            color: #aaa;
+        }
+
+        .profile-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .profile-photo-container {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .profile-photo-container img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--primary-color);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: var(--transition);
+        }
+
+        .profile-photo-container img:hover {
+            transform: scale(1.05);
+        }
+
+        .upload-btn {
+            background-color: #79a1b8;
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: var(--transition);
+        }
+
+        .upload-btn:hover {
+            background-color: #1E3E62;
+            transform: translateY(-2px);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .profile-details {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .profile-detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px dashed #e0e0e0;
+        }
+
+        body.dark .profile-detail-item {
+            border-bottom-color: #444;
+        }
+
+        .profile-detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #555;
+            flex-basis: 40%;
+            transition: var(--transition);
+        }
+
+        body.dark .detail-label {
+            color: #bbb;
+        }
+
+        .detail-value {
+            flex-basis: 60%;
+            text-align: right;
+            color: var(--text-dark);
+            word-break: break-word;
+        }
+
+        body.dark .detail-value {
+            color: var(--text-light);
+        }
+
+        .application-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+
+        .application-status.status-qualified {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .application-status.status-pending {
+            background-color: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+        }
+
+        /* Submenu specific styles */
+        .submenu {
+            padding-left: 15px;
+            margin-top: 10px;
+        }
+
+        .submenu-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+        }
+
+        .submenu-item label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-dark);
+        }
+
+        body.dark .submenu-item label {
+            color: var(--text-light);
+        }
+
+        .submenu-item input[type="checkbox"] {
+            transform: scale(1.2);
+            margin-left: 10px;
+            cursor: pointer;
+        }
+
+        .profile-photo-container {
+    text-align: center;
+    margin: 20px auto;
+    width: 150px;
+}
+
+    .photo-container {
+            text-align: center;
+            margin: 20px 0 30px;
+        }
+        .photo-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background-color: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            overflow: hidden;
+            border: 3px solid #fff;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
+        .photo-circle img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .upload-btn {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: background-color 0.2s;
+        }
+        .upload-btn:hover {
+            background-color: #357bd8;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eaecef;
+            padding-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .form-label {
+            font-weight: 500;
+            color: #333;
+        }
+        .form-value {
+            color: #555;
+            text-align: right;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .flash-message {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+    </style>
+</head>
+<body>
+    
+    <header class="topbar">
+        <div class="logo" onclick="window.location.href='/dashboard'">AceView</div>
+        <div class="right">
+            <div class="user-profile">
+                <div class="user-info">
+                    <div class="user-name">Welcome, {{ username }}!</div>
+                    <div class="date-time" id="datetime"></div>
+                </div>
+            </div>
+            <button class="toggle-theme" onclick="toggleTheme()">
+                <span id="theme-icon">🌓</span> 
+                <span id="theme-text">Theme</span>
+            </button>
+            <div class="menu-icon" onclick="toggleSidebar()">
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+        </div>
+    </header>
+
+   <div class="container">
+        <div class="sidebar" id="sidebar">
+            <div class="applicant-profile">
+                <div class="profile-header">
+                    
+                    <div>
+                        <div class="profile-name">{{ username }}</div>
+                        <div class="profile-role">Applicant</div>
+                    </div>
+                </div>
+                <div class="profile-info">
+                    <div class="info-item">
+                        <div class="info-label">Email:</div>
+                        <div class="info-value">{{ email }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Contact:</div>
+                        <div class="info-value">{{ contact }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Status:</div>
+                        <div class="info-value">Active</div>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-menu">
+                <a href="/dashboard" class="nav-link ">
+                    <span>📊</span> Dashboard
+                </a>
+                <a href="/preapp" class="nav-link">
+                    <span>📝</span> Pre-screening Result
+                </a>
+                <a href="/chatapp" class="nav-link">
+                    <span>💬</span> Chatbot result
+                </a>
+                <a href="/profile" class="nav-link active">
+                    <span>👤</span> Profile
+                </a>
+                
+
+                <div class="sidebar-item">
+                    <a href="javascript:void(0)" class="nav-link" onclick="toggleSettingsMenu()">
+                        <span>⚙️</span> Settings
+                    </a>
+                
+                    <div id="settings-submenu" class="submenu" style="display: none; margin-left: 20px;">
+                
+                        <div class="submenu-item">
+                            <a href="/logout" class="nav-link">🚪 Logout</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="main-content">
+          
+                <div class="profile-header">
+                    <h3 class="profile-title">Applicant Profile</h3>
+                    <p class="profile-subtitle">Your profile information and application status</p>
+                </div>
+
+                <div class="profile-cards">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Personal Information</h2>
+                        </div>
+                        <div class="card-content">
+
+                            <div class="photo-container">
+            <div class="photo-circle" onclick="document.getElementById('photo-upload').click()">
+                <!-- Default avatar image that will display initially -->
+                <img id="profile-preview" src="/static/uploads/default-avatar.png" alt="Profile photo">
+            </div>
+            
+            <form action="/upload_photo" method="POST" enctype="multipart/form-data" id="photo-form">
+                <input type="file" id="photo-upload" name="profile_photo" 
+                       accept="image/jpeg, image/png, image/gif" onchange="previewAndSubmit(this)">
+                
+                <button type="button" class="upload-btn" onclick="document.getElementById('photo-upload').click()">
+                    📷 Upload Photo
+                </button>
+                
+                <button type="button" id="save-photo-btn" class="upload-btn" 
+                       style="display: none; margin-left: 10px; background-color: #28a745;" 
+                       onclick="submitPhotoForm()">
+                    💾 Save Photo
+                </button>
+                </form>
+                </div>
+    <script>
+        // Function to preview and submit the form
+        function previewAndSubmit(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    // Update the image preview
+                    document.getElementById('profile-preview').src = e.target.result;
+                    
+                    // Show a message that image is ready for upload
+                    showFlashMessage('Image ready! Click "Save Photo" to upload');
+                    
+                    // Show the save button
+                    document.getElementById('save-photo-btn').style.display = 'inline-flex';
+                };
+                
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+        
+        function submitPhotoForm() {
+            // Submit the form
+            document.getElementById('photo-form').submit();
+        }
+        
+        // Function to display flash messages
+        function showFlashMessage(message) {
+            const flashContainer = document.getElementById('flash-message');
+            flashContainer.textContent = message;
+            flashContainer.style.display = 'block';
+            
+            // Hide the message after 3 seconds
+            setTimeout(function() {
+                flashContainer.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Check if we should show a default image error message
+        window.addEventListener('load', function() {
+            const profileImg = document.getElementById('profile-preview');
+            
+            // Try multiple fallback paths if image doesn't load
+            profileImg.onerror = function() {
+                // Try a series of fallback paths
+                const fallbackPaths = [
+                    '/static/images/default-avatar.png',
+                    '/static/default-avatar.png',
+                    '/static/uploads/default-avatar.png',
+                    '/static/img/default-avatar.png'
+                ];
+                
+                // Check if current src is already in our fallback list to avoid infinite loop
+                const currentSrc = this.src;
+                const currentPathIndex = fallbackPaths.indexOf(currentSrc);
+                
+                if (currentPathIndex !== -1 && currentPathIndex < fallbackPaths.length - 1) {
+                    // Try next fallback path
+                    this.src = fallbackPaths[currentPathIndex + 1];
+                } else if (!currentSrc.startsWith('data:')) {
+                    // If all paths fail and we're not already showing a data URI, use embedded SVG
+                    this.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiB2aWV3Qm94PSIwIDAgMTUwIDE1MCI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIxNTAiIGZpbGw9IiNmMGYwZjAiLz48Y2lyY2xlIGN4PSI3NSIgY3k9IjYwIiByPSIyMCIgZmlsbD0iI2FhYWFhYSIvPjxwYXRoIGQ9Ik00MCw5MCBRNzUsMTMwIDExMCw5MCBRMTEwLDEyMCA3NSwxMjAgUTQwLDEyMCA0MCw5MCBaIiBmaWxsPSIjYWFhYWFhIi8+PC9zdmc+';
+                    console.log('All image paths failed. Using embedded SVG placeholder.');
+                }
+            };
+            
+            // Ensure the initial src is valid
+            if (!profileImg.src || profileImg.src === window.location.href) {
+                profileImg.src = '/static/uploads/default-avatar.png';
+            }
+        });
+    </script>
+
+    
+
+                            <div class="profile-details">
+                                <div class="profile-detail-item">
+                                    <div class="detail-label">Full Name</div>
+                                    <div class="detail-value">{{ username|default('N/A') }}</div>
+                                </div>
+                                <div class="profile-detail-item">
+                                    <div class="detail-label">Email Address</div>
+                                    <div class="detail-value">{{ email|default('N/A') }}</div>
+                                </div>
+                                <div class="profile-detail-item">
+                                    <div class="detail-label">Contact Number</div>
+                                    <div class="detail-value">{{ contact|default('N/A') }}</div>
+                                </div>
+                                <div class="profile-detail-item">
+                                    <div class="detail-label">Position Applied</div>
+                                    <div class="detail-value">{{ position.replace('_', ' ') if position else 'N/A' }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Application Details</h2>
+                        </div>
+                        <div class="card-content">
+                            <div class="profile-details">
+                                <div class="profile-detail-item">
+                                    <div class="detail-label">Eligibility</div>
+                                    <div class="detail-value">{{ eligibility|default('N/A') }}</div>
+                                </div>
+                                <div class="profile-detail-item">
+                                    <div class="detail-label">Years of Experience</div>
+                                    <div class="detail-value">{{ yearexperience|default('0') }}</div>
+                                </div>
+                                <div class="profile-detail-item">
+                                    <div class="detail-label">Application Status</div>
+                                    <div class="detail-value">
+                                        <span class="application-status {{ 'status-qualified' if qualified == 'Qualified' else 'status-pending' }}">{{ qualified|default('N/A') }}</span>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+
+    // Simplified profile photo upload functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const profilePhotoInput = document.getElementById('profilePic');
+    const profileImage = document.getElementById('profile-image');
+    const uploadButton = document.querySelector('.upload-btn');
+    const photoForm = document.getElementById('photoUploadForm');
+    const errorMessage = document.getElementById('photoError');
+    const successMessage = document.getElementById('photoSuccess');
+    
+    // Make sure elements exist before adding listeners
+    if (!profilePhotoInput || !profileImage || !photoForm) {
+        console.error('Required elements not found');
+        return;
+    }
+    
+    // Preview image before upload
+    profilePhotoInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (!file) return;
+        
+        // File type validation
+        const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        if (!validTypes.includes(file.type)) {
+            showError('Please select a valid image file (JPEG, PNG, or GIF)');
+            return;
+        }
+        
+        // File size validation (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            showError('Image size should not exceed 5MB');
+            return;
+        }
+        
+        // Clear any previous errors
+        hideError();
+        
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            profileImage.src = e.target.result;
+            
+            // Add loading state
+            uploadButton.innerHTML = '<span class="spinner"></span> Uploading...';
+            uploadButton.disabled = true;
+            
+            // Submit the form
+            photoForm.submit();
+        };
+        reader.readAsDataURL(file);
+    });
+    
+    // Click on image to trigger file input
+    profileImage.addEventListener('click', function() {
+        profilePhotoInput.click();
+    });
+    
+    function showError(message) {
+        errorMessage.textContent = message;
+        errorMessage.style.display = 'block';
+        successMessage.style.display = 'none';
+    }
+    
+    function hideError() {
+        errorMessage.style.display = 'none';
+    }
+    
+    function showSuccess(message) {
+        successMessage.textContent = message;
+        successMessage.style.display = 'block';
+        errorMessage.style.display = 'none';
+    }
+});
+    
+    // Add drag and drop functionality
+    const dropZone = document.querySelector('.profile-photo-container');
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, highlight, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, unhighlight, false);
+    });
+    
+    function highlight() {
+        dropZone.classList.add('highlight');
+    }
+    
+    function unhighlight() {
+        dropZone.classList.remove('highlight');
+    }
+    
+    dropZone.addEventListener('drop', handleDrop, false);
+    
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const file = dt.files[0];
+        
+        if (file) {
+            profilePhotoInput.files = dt.files;
+            profilePhotoInput.dispatchEvent(new Event('change'));
+        }
+    }
+
+    // Update date and time
+    function updateDateTime() {
+        const now = new Date();
+        const options = {
+            weekday: 'short',
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        };
+        const dateTime = now.toLocaleDateString('en-US', options);
+        document.getElementById('datetime').textContent = dateTime;
+    }
+    // Toggle the submenu visibility
+    function toggleSettingsMenu() {
+        const submenu = document.getElementById("settings-submenu");
+        submenu.style.display = submenu.style.display === "none" ? "block" : "none";
+    }
+
+    // Load theme preference on page load
+    function loadThemePreference() {
+        const savedTheme = localStorage.getItem('theme');
+        const body = document.body;
+        const themeIcon = document.getElementById('theme-icon');
+        const themeText = document.getElementById('theme-text');
+        const darkToggle = document.getElementById('darkToggle');
+
+        if (savedTheme === 'dark') {
+            body.classList.add('dark');
+            if (themeIcon) themeIcon.textContent = '☀️';
+            if (themeText) themeText.textContent = 'Light';
+            if (darkToggle) darkToggle.checked = true;
+        } else {
+            body.classList.remove('dark');
+            if (themeIcon) themeIcon.textContent = '🌙';
+            if (themeText) themeText.textContent = 'Dark';
+            if (darkToggle) darkToggle.checked = false;
+        }
+    }
+
+    // Toggle dark/light theme
+    function toggleTheme() {
+        const body = document.body;
+        const themeIcon = document.getElementById('theme-icon');
+        const themeText = document.getElementById('theme-text');
+        const darkToggle = document.getElementById('darkToggle');
+
+        body.classList.toggle('dark');
+        if (body.classList.contains('dark')) {
+            localStorage.setItem('theme', 'dark');
+            if (themeIcon) themeIcon.textContent = '☀️';
+            if (themeText) themeText.textContent = 'Light';
+            if (darkToggle) darkToggle.checked = true;
+        } else {
+            localStorage.setItem('theme', 'light');
+            if (themeIcon) themeIcon.textContent = '🌙';
+            if (themeText) themeText.textContent = 'Dark';
+            if (darkToggle) darkToggle.checked = false;
+        }
+    }
+
+    // Toggle sidebar visibility
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        sidebar.classList.toggle('show');
+    }
+
+    // Initial calls
+    document.addEventListener('DOMContentLoaded', () => {
+        updateDateTime();
+        setInterval(updateDateTime, 1000); // Update every second
+        loadThemePreference();
+    });
+</script>
+</html>

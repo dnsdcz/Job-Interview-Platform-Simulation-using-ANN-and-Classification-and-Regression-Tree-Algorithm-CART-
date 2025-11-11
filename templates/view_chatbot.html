@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Assessments</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1E3E62;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #1E3E62;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            font-weight: 300;
+            margin: 0;
+        }
+
+        .search-container {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .search-box input:focus {
+            border-color: #1E3E62;
+            box-shadow: 0 0 0 3px rgba(30, 62, 98, 0.1);
+        }
+
+        .back-home-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #1E3E62;
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 500;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(30, 62, 98, 0.3);
+        }
+
+        .back-home-btn:hover {
+            background: #2d5aa0;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(30, 62, 98, 0.4);
+        }
+
+        .table-container {
+            padding: 30px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 90%;
+            margin: auto;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(30, 62, 98, 0.1);
+        }
+
+        th, td {
+            border: 1px solid #e9ecef;
+            padding: 18px 15px;
+            text-align: left;
+            font-size: 15px;
+        }
+
+        th {
+            background-color: #1E3E62;
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 14px;
+        }
+
+        td {
+            color: #2c3e50;
+            border-bottom: 1px solid #f0f2f5;
+        }
+
+        tbody tr {
+            transition: all 0.3s ease;
+        }
+
+        tbody tr:hover {
+            background-color: #f8f9fa;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(30, 62, 98, 0.15);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        /* Add alternating row colors for better readability */
+        tbody tr:nth-child(even) {
+            background-color: #f8f9fc;
+        }
+
+        tbody tr:nth-child(even):hover {
+            background-color: #e9ecef;
+        }
+
+        /* Status styling */
+        td:last-child {
+            font-weight: 600;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            body {
+                padding: 20px 10px;
+            }
+
+            h2 {
+                font-size: 1.8rem;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .search-container {
+                padding: 15px 20px;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box {
+                min-width: auto;
+            }
+
+            .table-container {
+                padding: 20px;
+            }
+
+            table {
+                width: 100%;
+            }
+
+            th, td {
+                padding: 12px 8px;
+                font-size: 14px;
+            }
+
+            .back-container {
+                padding: 20px;
+            }
+        }
+
+        
+        .back-container {
+            padding: 30px;
+            text-align: center;
+            background: #f8f9fa;
+        }
+
+        
+        a {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #1E3E62;
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 500;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(30, 62, 98, 0.3);
+        }
+
+        a:hover {
+            background: #2d5aa0;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(30, 62, 98, 0.4);
+        }
+        /* Add subtle animation on page load */
+        .container {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Enhanced qualifications column */
+        td:nth-child(3) {
+            max-width: 300px;
+            line-height: 1.5;
+        }
+
+        /* Job role styling */
+        td:nth-child(2) {
+            font-weight: 500;
+            color: #1E3E62;
+        }
+
+        /* Full name styling */
+        td:first-child {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Chatbot Assessment Results</h2>
+        </div>
+        
+        <div class="search-container">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search by name, job role, qualifications, or status..." onkeyup="searchTable()">
+            </div>
+         
+        </div>
+        
+        <div class="table-container">
+            <table id="assessmentTable">
+                <thead>
+                    <tr>
+                        <th>Full Name</th>
+                        <th>Job Role</th>
+                        <th>Qualifications</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in chatbot %}
+                    <tr>
+                        <td>{{ entry[0] }}</td>  <!-- user_name -->
+                        <td>{{ entry[1] }}</td>  <!-- job_role -->
+                        <td>{{ entry[2] }}</td>  <!-- qualifications -->
+                        <td>{{ entry[3] }}</td>  <!-- qualification_status -->
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="back-container">
+            <br>
+            <a href="{{ url_for('hr') }}">← Back to HR Dashboard</a>
+        </div>
+        </div>
+    </div>
+
+    <script>
+        function searchTable() {
+            const input = document.getElementById('searchInput');
+            const filter = input.value.toUpperCase();
+            const table = document.getElementById('assessmentTable');
+            const tbody = table.getElementsByTagName('tbody')[0];
+            const rows = tbody.getElementsByTagName('tr');
+
+            for (let i = 0; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName('td');
+                let found = false;
+                
+                for (let j = 0; j < cells.length; j++) {
+                    if (cells[j]) {
+                        const textValue = cells[j].textContent || cells[j].innerText;
+                        if (textValue.toUpperCase().indexOf(filter) > -1) {
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if (found) {
+                    rows[i].style.display = '';
+                } else {
+                    rows[i].style.display = 'none';
+                }
+            }
+        }
+    </script>
+</body>
+</html>

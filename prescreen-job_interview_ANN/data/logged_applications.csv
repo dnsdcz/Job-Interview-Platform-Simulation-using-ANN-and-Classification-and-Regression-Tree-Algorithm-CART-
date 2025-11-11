@@ -1,0 +1,16 @@
+name,age,address,education,experience,skills,contact,eligible
+Alice,23,Cebu,bachelor,2 years,"Python, Excel, Teamwork",6.39123E+11,1
+Bob,19,Manila,high_school,0 years,Typing,6.39988E+11,0
+Charlie,30,Davao,master,5 years,"Machine Learning, Research, Writing",6.39123E+11,1
+Diana,26,Quezon City,bachelor,3 years,"Communication, Leadership",6.39457E+11,1
+Edward,35,Baguio,phd,10 years,"AI, Data Analysis, Python",6.39E+11,1
+Frank,20,Makati,vocational,0 years,Basic Computer Skills,6.39111E+11,0
+Grace,32,Pasig,bachelor,7 years,"Python, Data Analysis, SQL",6.39222E+11,1
+Henry,18,Cebu,high_school,0 years,None,6.39333E+11,0
+Irene,27,Manila,bachelor,4 years,"Project Management, Communication",6.39445E+11,1
+Jack,45,Davao,phd,15 years,"AI, Machine Learning, Leadership",6.39556E+11,1
+Kim,22,Quezon City,associate,1 year,Customer Service,6.39667E+11,0
+Leo,29,Baguio,master,5 years,"Finance, Analytics, Management",6.39778E+11,1
+Maria,19,Manila,high_school,0 years,"Art, Design",6.39889E+11,0
+Nathan,33,Iloilo,bachelor,8 years,"Civil Engineering, AutoCAD",6.39999E+11,1
+Olivia,25,Cebu,vocational,2 years,"Nursing, Patient Care",6.39E+11,0

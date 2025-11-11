@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Apply for Position</title>
+</head>
+<body>
+    <h2>Select a Position to Apply</h2>
+    <form method="POST">
+        <label for="position">Position:</label>
+        <select name="position" required>
+            <option value="" disabled selected>Select a position</option>
+            {% for pos in positions %}
+                <option value="{{ pos }}">{{ pos }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Apply</button>
+    </form>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul>
+        {% for category, message in messages %}
+          <li><strong>{{ category }}:</strong> {{ message }}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+</body>
+</html>

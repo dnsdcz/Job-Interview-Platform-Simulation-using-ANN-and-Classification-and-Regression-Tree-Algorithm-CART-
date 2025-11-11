@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recruitment Dashboard</title>
+    <style>
+        :root {
+            --primary: #1E3E62;
+            --primary-light: #2c5a8c;
+            --primary-dark: #16304d;
+            --white: #ffffff;
+            --light-gray: #f5f7fa;
+            --gray: #e0e5ec;
+            --text-dark: #333;
+            --success: #2ecc71;
+            --box-shadow: 0 4px 12px rgba(30, 62, 98, 0.1);
+            --border-radius: 8px;
+            --transition: all 0.3s ease;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-gray);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background-color: var(--primary);
+            color: var(--white);
+            padding: 30px 0;
+            text-align: center;
+            margin-bottom: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+        
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background-color: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 25px;
+            margin-bottom: 30px;
+            transition: var(--transition);
+        }
+        
+        .card:hover {
+            box-shadow: 0 6px 18px rgba(30, 62, 98, 0.16);
+            transform: translateY(-2px);
+        }
+        
+        .card h2 {
+            color: var(--primary);
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--gray);
+            position: relative;
+        }
+        
+        .card h2::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -2px;
+            width: 60px;
+            height: 2px;
+            background-color: var(--primary);
+        }
+        
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: -10px;
+        }
+        
+        .form-group {
+            flex: 1 1 300px;
+            margin: 10px;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--primary);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--gray);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+            background-color: var(--white);
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(30, 62, 98, 0.1);
+        }
+        
+        .input-with-icon {
+            position: relative;
+        }
+        
+        .icon {
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+            color: var(--primary);
+        }
+        
+        .days-of-week {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .day-checkbox {
+            display: none;
+        }
+        
+        .day-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background-color: var(--light-gray);
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+        
+        .day-checkbox:checked + .day-label {
+            background-color: var(--primary);
+            color: var(--white);
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            text-transform: uppercase;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: var(--white);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .btn-secondary {
+            background-color: var(--gray);
+            color: var(--primary);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #d0d5dc;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            font-weight: 500;
+            display: none;
+        }
+        
+        .alert-success {
+            background-color: rgba(46, 204, 113, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(46, 204, 113, 0.2);
+        }
+        
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%231E3E62' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 16px;
+            padding-right: 45px;
+        }
+        
+        /* Progress Bars */
+        .progress-section {
+            margin-top: 15px;
+        }
+        
+        .progress-item {
+            margin-bottom: 15px;
+        }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .progress-title {
+            font-weight: 500;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background-color: var(--gray);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background-color: var(--primary);
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+        
+        @media (max-width: 768px) {
+            .form-group {
+                flex: 1 1 100%;
+            }
+            
+            .day-label {
+                width: 35px;
+                height: 35px;
+                font-size: 0.9rem;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            } 
+            .back-container {
+                padding: 20px;
+            }
+        }
+
+        
+        .back-container {
+            padding: 30px;
+            text-align: center;
+            background: #f8f9fa;
+        }
+
+        a {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #1E3E62;
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 500;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(30, 62, 98, 0.3);
+        }
+
+        a:hover {
+            background: #2d5aa0;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(30, 62, 98, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Recruitment Dashboard</h1>
+            <p>Monitor recruitment progress and manage chatbot interactions</p>
+        </div>
+
+            <div class="card">
+    <h2>Current Applicant Progress</h2>
+    <div id="bars" class="progress-section">
+        {% for item in progress_data %}
+        <div class="progress-item">
+            <div class="progress-header">
+                <span class="progress-title">{{ item.position }}</span>
+                <span class="progress-count">{{ item.current }}/{{ item.max_allowed }}</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ item.percent }}%;"></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+        
+       
+        
+        <div class="card">
+            <h2>Set Max Application Limits</h2>
+            <form action="/set_pax" method="POST">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="position">Select Position</label>
+                        <select name="position" id="position" class="form-control" required>
+                            <option value="Business Analyst">Business Analyst</option>
+                            <option value="Project Analyst">Project Analyst</option>
+                            <option value="Java Developer">Java Developer</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="max_allowed">Max Applicants</label>
+                        <input type="number" id="max_allowed" name="max_allowed" min="1" class="form-control" required>
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-primary">Set Limit</button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="card">
+            <h2>Set Max Chatbot Interactions</h2>
+            <form action="/set_chat" method="POST">
+                <input type="hidden" name="position" value="chatbot">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="max_interactions">Max Interactions</label>
+                        <input type="number" id="max_interactions" name="max_allowed" min="1" class="form-control" required>
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-primary">Set Limit</button>
+                </div>
+            </form>
+        </div>
+        
+    
+
+        <div class="back-container">
+            <br>
+            <a href="{{ url_for('hr') }}">← Back to HR Dashboard</a>
+        </div>
+    </div>
+
+    <script>
+        // Set minimum date to today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('scheduleDate').min = today;
+        document.getElementById('endDate').min = today;
+
+        // Form submission handling
+        document.getElementById('scheduleForm').addEventListener('submit', function(e) {
+            // Validate form
+            const date = document.getElementById('scheduleDate').value;
+            const time = document.getElementById('scheduleTime').value;
+            
+            if (!date || !time) {
+                alert('Please fill in all required fields');
+                e.preventDefault();
+                return;
+            }
+            
+            // For recurring schedules
+            const recurringDays = [];
+            document.querySelectorAll('input[name="recurring"]:checked').forEach(checkbox => {
+                recurringDays.push(checkbox.value);
+            });
+            
+            // If recurring days are selected, handle them
+            if (recurringDays.length > 0) {
+                // Create a hidden field to send recurring days data
+                const recurringInput = document.createElement('input');
+                recurringInput.type = 'hidden';
+                recurringInput.name = 'recurring_days';
+                recurringInput.value = JSON.stringify(recurringDays);
+                this.appendChild(recurringInput);
+            }
+            
+            // Show success message (will be redirected anyway, but just in case)
+            const alertBox = document.getElementById('alert-message');
+            alertBox.style.display = 'block';
+        });
+    </script>
+</body>
+</html>

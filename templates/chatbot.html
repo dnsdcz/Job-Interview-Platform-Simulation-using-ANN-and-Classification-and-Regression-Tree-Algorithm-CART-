@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Technical Interview Chatbot</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f2f5;
+      margin: 0;
+    }
+    .container {
+      max-width: 900px;
+      margin: 30px auto;
+      padding: 20px;
+    }
+    .chatbot-header {
+      background-color: #001f4d; /* navy blue */
+      color: white;
+      padding: 20px;
+      border-radius: 12px 12px 0 0;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .chatbot-header img {
+      width: 50px;
+      height: 50px;
+    }
+    .chatbot-header h2 {
+      margin: 0;
+      font-size: 1.8em;
+    }
+    .user-info, .upload-section {
+      background-color: white;
+      border: 1px solid #cce4f7;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+      color: #001f4d; /* navy text */
+    }
+    .info-row {
+      margin: 8px 0;
+    }
+    .info-label {
+      font-weight: bold;
+    }
+    .file-input-container {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .upload-status {
+      margin-top: 10px;
+      color: #001f4d;
+    }
+    .success-message {
+      color: #28a745;
+    }
+    .error-message {
+      color: #d9534f;
+    }
+    .chat-area {
+      background-color: white;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      padding: 20px;
+    }
+    .chat-content {
+      height: 350px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 10px;
+      background-color: #fafafa;
+      margin-bottom: 15px;
+    }
+    .message {
+      margin-bottom: 10px;
+      padding: 10px;
+      border-radius: 8px;
+      max-width: 75%;
+    }
+    .bot {
+      background-color: #d9e6f2;
+      align-self: flex-start;
+      color: #001f4d;
+    }
+    .user {
+      background-color: #cce0ff;
+      align-self: flex-end;
+      text-align: right;
+      color: #001f4d;
+    }
+    .input-area {
+      display: flex;
+      gap: 10px;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 10px;
+      border-radius: 4px;
+      border: 1px solid #001f4d;
+      color: #001f4d;
+    }
+    button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      background-color: #001f4d;
+      color: white;
+      cursor: pointer;
+    }
+    button:disabled {
+      background-color: #a0a0a0;
+      cursor: not-allowed;
+    }
+    #save-container, #summary-link, #final-result {
+      display: none;
+      margin-top: 20px;
+      color: #001f4d;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header with Icon -->
+    <div class="chatbot-header">
+      <img src="{{ url_for('static', filename='icon.png') }}" alt="Chatbot Icon" />
+      <h2>AceView</h2>
+      {% if name %}
+      <p class="user-welcome">Welcome, {{ name }}!</p>
+      {% endif %}
+    </div>
+
+    <!-- Applicant Info -->
+    <div class="user-info">
+      <div class="info-row"><span class="info-label">Name:</span> {{ name }}</div>
+      <div class="info-row"><span class="info-label">Experience:</span> {{ experience }} years</div>
+      <div class="info-row"><span class="info-label">Position:</span> {{ position }}</div>
+      <!-- Hidden field for backend submission -->
+      <input type="hidden" id="user_id" value="{{ user_id }}" />
+    </div>
+
+    <div class="upload-section">
+      <h3>Upload Resume</h3>
+      <div class="file-input-container">
+        <input type="file" id="resume-file" accept=".pdf,.doc,.docx" />
+        <button id="uploadResumeBtn">Upload</button>
+      </div>
+      <div id="upload-status" class="upload-status"></div>
+    </div>
+
+    <div class="chat-area">
+      <div class="chat-content" id="chat-content"></div>
+      <div class="input-area">
+        <input type="text" id="answer-input" placeholder="Type your answer here..." disabled />
+        <button id="submit-btn" onclick="submitAnswer()" disabled>Submit</button>
+      </div>
+    </div>
+
+    <div id="final-result"></div>
+    <div id="save-container">
+      <button id="save" onclick="saveInterviewSummary()" disabled>Save Result</button>
+      <button id="view-summary">View Summary</button>
+    </div>
+    <div id="summary-link">
+      <button id="generate-pdf">Generate PDF</button>
+      <button id="download-summary">Download .docx</button>
+    </div>
+
+    <!-- Removed skills input -->
+    <input type="hidden" id="input-status" />
+    <input type="hidden" id="input-advice" />
+    <input type="hidden" id="input-assessment" />
+    <input type="hidden" id="input-confidence" />
+    <input type="hidden" id="input-score" />
+  </div>
+
+  <script src="/static/chatbot.js"></script>
+</body>
+</html>

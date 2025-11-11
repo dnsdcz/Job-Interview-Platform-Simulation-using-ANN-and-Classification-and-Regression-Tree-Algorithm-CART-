@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Interview Summary Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0; padding: 0;
+            background-color: #f0f4f8;
+            color: #001f3f;
+        }
+
+        .report-container {
+            max-width: 900px;
+            margin: 30px auto;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            background-color: white;
+        }
+
+        .header {
+            background-color: #001f3f;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .content {
+            padding: 25px;
+        }
+
+        .section {
+            margin-bottom: 25px;
+            padding: 0 25px;
+        }
+
+        .section-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #001f3f;
+            margin-bottom: 10px;
+            border-left: 4px solid #0074D9;
+            padding-left: 10px;
+        }
+
+        .highlight {
+            font-weight: bold;
+            color: #0074D9;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+
+        th {
+            background-color: #e6f0ff;
+            color: #001f3f;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        .question, .answer, .suggestion, .status, .score {
+            margin: 5px 0;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            background-color: #001f3f;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .progress {
+            background-color: #dbe9f6;
+            border-radius: 5px;
+            overflow: hidden;
+            height: 25px;
+            margin-top: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: #0074D9;
+            color: white;
+            text-align: center;
+            line-height: 25px;
+            transition: width 0.6s ease;
+        }
+
+        .score-success { color: #28a745; font-weight: bold; }
+        .score-warning { color: #ffc107; font-weight: bold; }
+        .score-danger  { color: #dc3545; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="report-container"
+         id="report-data"
+         data-confidence="{{ confidence | default(0, true) }}"
+         data-average-score="{{ average_score | default(0, true) }}"
+         data-user-id="{{ user_id | default(0, true) }}"
+         data-assessment='{{ assessment_data | tojson | safe }}'>
+
+        <div class="header">
+            <h1>Interview Summary Report</h1>
+            <p>Hi {{ name }}, here's your summary</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Suggested Role</div>
+            <p>{{ role or "You seem suited for the role." }}</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Qualification Status</div>
+            <p class="highlight">{{ qualification_status or "Not available" }}</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Advice & Recommendations</div>
+            <p>{{ general_advice }}</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Assessment Breakdown</div>
+            {% for item in assessment_data %}
+                <div class="question">Q: {{ item.question }}</div>
+                <div class="answer">A: {{ item.answer }}</div>
+                <div class="status">Status: {{ item.status }}</div>
+                <div class="score">Score: {{ item.score }}%</div>
+            {% endfor %}
+        </div>
+
+        <div class="section">
+            <div class="section-title">Confidence Level</div>
+            <div class="progress">
+                <div id="confidence-bar" class="progress-bar"
+                     role="progressbar"
+                     aria-valuemin="0"
+                     aria-valuemax="100">
+                    {{ confidence }}%
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Final Score</div>
+            <p>Average Score: {{ average_score }}% ({{ average_score_label }})</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Interview Completed On</div>
+            <p id="completion-timestamp"></p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Summary Actions</div>
+            <p>Your interview has been saved successfully.</p>
+            <p>You can now download your summary report as a PDF or return to the dashboard:</p>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <form action="{{ url_for('download_summary') }}" method="get">
+                    <button type="submit" class="btn">📄 Download PDF Summary</button>
+                </form>
+                <a href="{{ url_for('dash') }}" class="btn">🏠 Go to Dashboard</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const reportElem = document.getElementById("report-data");
+
+        const assessmentData = JSON.parse(reportElem.dataset.assessment || "[]");
+        const userId = parseInt(reportElem.dataset.userId || "0");
+        const confValue = parseFloat(reportElem.dataset.confidence || "0");
+
+        console.log("✅ From dataset:", { userId, confValue, assessmentData });
+
+        if (userId && assessmentData.length > 0) {
+            fetch("/insert_chatbot_data", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    user_id: userId,
+                    confidence: confValue,
+                    assessment_data: assessmentData
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        console.error("❌ Failed to save data:", err.message);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.status === "success") {
+                    console.log("✅ Chatbot data inserted successfully.");
+                } else {
+                    console.warn("⚠️ Unexpected status in response.", data);
+                }
+            })
+            .catch(error => {
+                console.error("🚨 Error sending data:", error);
+            });
+        } else {
+            console.warn("⚠️ Missing user ID or assessment data, skipping POST.");
+        }
+
+        // Set date
+        const now = new Date();
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById("completion-timestamp").textContent = now.toLocaleDateString(undefined, options);
+
+        // Progress bar fill
+        const confidenceBar = document.getElementById("confidence-bar");
+        confidenceBar.style.width = `${confValue}%`;
+    });
+    </script>
+</body>
+</html>
