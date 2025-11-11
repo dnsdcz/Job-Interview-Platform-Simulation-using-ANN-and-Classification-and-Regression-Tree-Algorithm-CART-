@@ -52,17 +52,17 @@ A web-based simulation platform designed to assess job candidates using Artifici
 
 
 ## Folder Structure
-phyt/
-├── app.py
-├── routes.py
-├── templates/
-├── static/
-├── uploads/
-├── summary_reports/
-├── prescreen-job_interview_ANN/
-├── Job-Interview-Platform-Simulation-using-ANN-and-CART/
-├── model.h5
-├── model_fallback.pkl
-├── requirements.txt
-└── README.md  
+    phyt/
+    ├── app.py
+    ├── routes.py
+    ├── templates/
+    ├── static/
+    ├── uploads/
+    ├── summary_reports/
+    ├── prescreen-job_interview_ANN/
+    ├── Job-Interview-Platform-Simulation-using-ANN-and-CART/
+    ├── model.h5
+    ├── model_fallback.pkl
+    ├── requirements.txt
+    └── README.md  
 
