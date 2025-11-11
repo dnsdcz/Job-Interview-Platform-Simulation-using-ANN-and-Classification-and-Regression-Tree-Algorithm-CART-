@@ -1,6 +1,5 @@
 # Job-Interview-Platform-Simulation-using-ANN-and-Classification-and-Regression-Tree-Algorithm-CART-
 
-# 💼 Job Interview Platform Simulation using ANN and CART
 
 A web-based simulation platform designed to assess job candidates using Artificial Neural Networks (ANN) and Classification and Regression Tree (CART) algorithms. Built with Flask, this system supports prescreening, scoring, and report generation — all wrapped in a responsive, brand-aligned interface.
 
