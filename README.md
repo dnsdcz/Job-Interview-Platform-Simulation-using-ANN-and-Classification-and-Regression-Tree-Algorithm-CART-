@@ -35,4 +35,4 @@ A web-based simulation platform designed to assess job candidates using Artifici
 1. **Clone the repository**
    ```bash
    git clone https://github.com/dnsdcz/Job-Interview-Platform-Simulation-using-ANN-and-Classification-and-Regression-Tree-Algorithm-CART-.git
-   cd phyt
+   cd phyt  
