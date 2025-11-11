@@ -36,3 +36,33 @@ A web-based simulation platform designed to assess job candidates using Artifici
    ```bash
    git clone https://github.com/dnsdcz/Job-Interview-Platform-Simulation-using-ANN-and-Classification-and-Regression-Tree-Algorithm-CART-.git
    cd phyt  
+
+2. **Create a virtual environment**
+    python -m venv tf-env
+
+3. **Activate the environment**
+    tf-env\Scripts\activate
+
+4. **Install dependencies**
+    pip install -r requirements.txt
+
+5. **Run the app**
+    python app.py  
+
+
+
+## Folder Structure
+phyt/
+├── app.py
+├── routes.py
+├── templates/
+├── static/
+├── uploads/
+├── summary_reports/
+├── prescreen-job_interview_ANN/
+├── Job-Interview-Platform-Simulation-using-ANN-and-CART/
+├── model.h5
+├── model_fallback.pkl
+├── requirements.txt
+└── README.md  
+
