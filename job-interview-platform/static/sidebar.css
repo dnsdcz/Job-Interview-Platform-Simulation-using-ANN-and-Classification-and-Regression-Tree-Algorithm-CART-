@@ -1,0 +1,63 @@
+/* Sidebar styles */
+.sidebar {
+    width: 260px;
+    background-color: var(--sidebar-light);
+    backdrop-filter: blur(15px);
+    box-shadow: 2px 0 30px rgba(0, 0, 0, 0.1);
+    transform: translateX(-100%);
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    position: fixed;
+    height: 100%;
+    top: 80px;
+    bottom: 0;
+    left: 0;
+    z-index: 999;
+    overflow-y: auto;
+    gap: 1.5rem;
+    padding: 2rem 1.5rem;
+    border-right: 1px solid rgba(90, 103, 216, 0.1);
+}
+
+.sidebar.show {
+    transform: translateX(0);
+}
+
+.sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: rgba(90, 103, 216, 0.3);
+    border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(90, 103, 216, 0.5);
+}
+
+body.dark .sidebar {
+    background-color: #1E3E62;
+}
+
+/* Sidebar overlay (optional for smoother UX) */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.35s ease-in-out, visibility 0.35s;
+    z-index: 900;
+}
+
+.sidebar-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}

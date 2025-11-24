@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register</title>
+
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #1E3E62 0%, #0d1f35 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .main-container {
+      display: flex;
+      width: 90%;
+      max-width: 1000px;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+      animation: fadeInUp 0.5s ease;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .form-container {
+      flex: 1;
+      padding: 40px;
+    }
+
+    .illustration {
+      flex: 1;
+      background: url("{{ url_for('static', filename='Interview2.png') }}") no-repeat center;
+      background-size: contain;
+      background-color: #f4f7ff;
+      position: relative;
+    }
+
+    .illustration::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(30, 62, 98, 0.05) 0%, rgba(30, 62, 98, 0.1) 100%);
+      pointer-events: none;
+    }
+
+    .form-container label.reg {
+      display: block;
+      font-size: 45px;
+      margin-bottom: 10px;
+      font-weight: 700;
+      text-align: center;
+      background: linear-gradient(135deg, #1E3E62 0%, #4a6fa5 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #6b7280;
+      font-size: 14px;
+      margin-bottom: 25px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+      position: relative;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 12px 15px;
+      border-radius: 30px;
+      border: 2px solid #e5e7eb;
+      background: #f9fafb;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #1E3E62;
+      background: white;
+      box-shadow: 0 0 0 4px rgba(30, 62, 98, 0.1);
+    }
+
+    .form-group input.error {
+      border-color: #ef4444;
+      background: #fef2f2;
+      animation: shake 0.3s ease;
+    }
+
+    @keyframes shake {
+
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      25% {
+        transform: translateX(-5px);
+      }
+
+      75% {
+        transform: translateX(5px);
+      }
+    }
+
+    .btn-register {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 30px;
+      background: linear-gradient(135deg, #1E3E62 0%, #4a6fa5 100%);
+      color: white;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(30, 62, 98, 0.3);
+    }
+
+    .btn-register:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(30, 62, 98, 0.4);
+    }
+
+    .btn-register:active {
+      transform: translateY(0);
+    }
+
+    .btn-register:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .error-message {
+      color: #dc2626;
+      padding: 5px 8px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 5px;
+      animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-5px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .error-message i {
+      font-size: 14px;
+    }
+
+    .alert-box {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+      padding: 12px 15px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      animation: slideDown 0.3s ease;
+    }
+
+    .alert-box i {
+      font-size: 20px;
+    }
+
+    .register-link {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    .form-footer a,
+    .register-link a {
+      font-size: 14px;
+      color: #1E3E62;
+      text-decoration: none;
+      position: relative;
+      font-weight: 500;
+      transition: color 0.3s ease;
+    }
+
+    .form-footer a:hover,
+    .register-link a:hover {
+      color: #4a6fa5;
+    }
+
+    .form-footer a::after,
+    .register-link a::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -2px;
+      width: 0%;
+      height: 2px;
+      background-color: #1E3E62;
+      transition: width 0.3s ease;
+    }
+
+    .form-footer a:hover::after,
+    .register-link a:hover::after {
+      width: 100%;
+    }
+
+    .Regs {
+      font-size: 16px;
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .form-footer {
+      text-align: center;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .checkbox-label {
+      font-size: 14px;
+      color: #4b5563;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      margin-top: 3px;
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: #1E3E62;
+    }
+
+    .checkbox-label a {
+      color: #1E3E62;
+      text-decoration: none;
+      font-weight: 500;
+      cursor: pointer;
+      transition: color 0.3s ease;
+    }
+
+    .checkbox-label a:hover {
+      color: #4a6fa5;
+      text-decoration: underline;
+    }
+
+    .g-recaptcha {
+      margin: 1rem 0;
+      display: flex;
+      justify-content: center;
+    }
+
+    .reg {
+      color: #1E3E62;
+    }
+
+    /* Password strength indicator */
+    .password-strength {
+      margin-top: 8px;
+      display: none;
+    }
+
+    .password-strength.show {
+      display: block;
+    }
+
+    .strength-bars {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .strength-bar {
+      height: 4px;
+      flex: 1;
+      background: #e5e7eb;
+      border-radius: 2px;
+      transition: all 0.3s ease;
+    }
+
+    .strength-bar.active {
+      background: #ef4444;
+    }
+
+    .strength-bar.active.medium {
+      background: #f59e0b;
+    }
+
+    .strength-bar.active.strong {
+      background: #10b981;
+    }
+
+    .strength-text {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 4px;
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      animation: fadeIn 0.3s ease;
+      overflow-y: auto;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .modal.show {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-content {
+      background-color: #fff;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      animation: slideUp 0.3s ease;
+      position: relative;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .modal-header {
+      padding: 24px 30px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(135deg, #1E3E62 0%, #4a6fa5 100%);
+      border-radius: 16px 16px 0 0;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+      color: white;
+    }
+
+    .modal-close {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      font-size: 28px;
+      cursor: pointer;
+      color: white;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .modal-close:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: rotate(90deg);
+    }
+
+    .modal-body {
+      padding: 30px;
+      line-height: 1.8;
+      color: #374151;
+    }
+
+    .modal-body h1 {
+      font-size: 28px;
+      color: #1E3E62;
+      margin-bottom: 16px;
+      font-weight: 700;
+    }
+
+    .modal-body h2 {
+      font-size: 20px;
+      color: #1E3E62;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    .modal-body p {
+      margin-bottom: 16px;
+      font-size: 15px;
+    }
+
+    .modal-body ul {
+      margin: 12px 0;
+      padding-left: 24px;
+    }
+
+    .modal-body li {
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+
+    .modal-body a {
+      color: #1E3E62;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s ease;
+    }
+
+    .modal-body a:hover {
+      color: #4a6fa5;
+      text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+      .main-container {
+        flex-direction: column;
+      }
+
+      .illustration {
+        height: 200px;
+        background-size: cover;
+      }
+
+      .form-container {
+        padding: 30px 25px;
+      }
+
+      .form-container label.reg {
+        font-size: 36px;
+      }
+
+      .modal-content {
+        max-height: 90vh;
+      }
+
+      .modal-header {
+        padding: 20px 24px;
+      }
+
+      .modal-header h2 {
+        font-size: 20px;
+      }
+
+      .modal-body {
+        padding: 24px;
+      }
+
+      .modal-body h1 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="main-container">
+    <div class="form-container">
+      <label class="reg">Register</label>
+      <p class="subtitle">Create your account to get started</p>
+
+      {% if error %}
+      <div class="alert-box">
+        <i class='bx bx-error-circle'></i>
+        <span>{{ error }}</span>
+      </div>
+      {% endif %}
+
+      <form method="POST">
+        <div class="form-group">
+          <input type="text" name="username" placeholder="Username" required>
+        </div>
+
+        <div class="form-group">
+          <input type="email" name="email" placeholder="Email" required id="email">
+          <span id="emailError" class="error-message" style="display: none;">
+            <i class='bx bx-error-circle'></i>
+            <span id="emailErrorText">This email is already registered</span>
+          </span>
+        </div>
+
+        <div class="form-group">
+          <input type="password" name="password" placeholder="Password" required id="password">
+          <div class="password-strength" id="passwordStrength">
+            <div class="strength-bars">
+              <div class="strength-bar"></div>
+              <div class="strength-bar"></div>
+              <div class="strength-bar"></div>
+              <div class="strength-bar"></div>
+            </div>
+            <div class="strength-text" id="strengthText">Password strength</div>
+          </div>
+          <span id="passError" class="error-message" style="display: none;">
+            <i class='bx bx-error-circle'></i>
+            <span>Password must be at least 8 characters with uppercase, lowercase, and a number</span>
+          </span>
+        </div>
+
+        <div class="form-group">
+          <input type="password" name="confirm_password" placeholder="Confirm Password" required id="confirm_password">
+          <span id="confirmPasswordError" class="error-message" style="display: none;">
+            <i class='bx bx-error-circle'></i>
+            <span>Passwords do not match</span>
+          </span>
+        </div>
+
+        <div id="contactDiv" class="form-group">
+          <input type="text" name="contact_number" placeholder="Contact Number">
+        </div>
+
+
+
+        <!-- Google Recaptcha - Replace with valid v2 site key -->
+        <div class="g-recaptcha" data-sitekey="6LfLvBEsAAAAAD3LBG4FWmxbsEPn1068Nv6IO3Fm"></div>
+
+        <button type="submit" class="btn-register" style="margin-top:15px;">Register</button>
+
+        <div class="register-link">
+          Already have an account? <a href="{{ url_for('auth.login') }}">Log in now!</a>
+        </div>
+
+        <!-- Footer Links -->
+        <div class="form-footer">
+          <a href="#" id="footerPrivacyLink">Privacy</a> •
+          <a href="#" id="footerTermsLink">Terms</a> •
+          <a href="/support">Support</a>
+        </div>
+
+      </form>
+
+    </div>
+
+    <div class="illustration"></div>
+  </div>
+
+  <!-- Terms & Conditions Modal -->
+  <div id="termsModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Terms & Conditions</h2>
+        <button class="modal-close" onclick="closeModal('termsModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h1>Terms & Conditions</h1>
+        <p>Welcome to Aceview! By accessing or using our AI-powered interview platform, you agree to comply with and be
+          bound by the following terms and conditions.</p>
+
+        <h2>1. Acceptance of Terms</h2>
+        <p>By creating an account or using our services, you acknowledge that you have read, understood, and agree to be
+          bound by these Terms & Conditions.</p>
+
+        <h2>2. Use of Service</h2>
+        <p>You agree to use Aceview's services only for lawful purposes and in accordance with these terms. You must
+          not:</p>
+        <ul>
+          <li>Use the platform in any way that violates applicable laws or regulations</li>
+          <li>Attempt to gain unauthorized access to any part of the service</li>
+          <li>Interfere with or disrupt the service or servers</li>
+          <li>Upload malicious code or content that could harm the platform</li>
+        </ul>
+
+        <h2>3. User Accounts</h2>
+        <p>You are responsible for maintaining the confidentiality of your account credentials and for all activities
+          that occur under your account. You must notify us immediately of any unauthorized use of your account.</p>
+
+        <h2>4. Intellectual Property</h2>
+        <p>All content, features, and functionality of Aceview are owned by us and are protected by international
+          copyright, trademark, and other intellectual property laws.</p>
+
+        <h2>5. Limitation of Liability</h2>
+        <p>Aceview shall not be liable for any indirect, incidental, special, or consequential damages arising out of or
+          in connection with your use of the platform.</p>
+
+        <h2>6. Changes to Terms</h2>
+        <p>We reserve the right to modify these terms at any time. Continued use of the service after changes
+          constitutes acceptance of the modified terms.</p>
+
+        <h2>7. Contact Us</h2>
+        <p>If you have any questions about these Terms & Conditions, please contact us at <a
+            href="mailto:support@aceview.com">support@aceview.com</a>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Privacy Policy Modal -->
+  <div id="privacyModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Privacy Policy</h2>
+        <button class="modal-close" onclick="closeModal('privacyModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h1>Privacy Policy</h1>
+        <p>At Aceview, we are committed to protecting your privacy. This Privacy Policy explains how we collect, use,
+          and safeguard your personal information when you use our AI-powered interview platform.</p>
+
+        <h2>Information We Collect</h2>
+        <p>We collect information that you provide directly to us, including:</p>
+        <ul>
+          <li>Account information (username, email, contact number)</li>
+          <li>Interview recordings and responses</li>
+          <li>Usage data and platform interactions</li>
+          <li>Technical data (IP address, browser type, device information)</li>
+        </ul>
+
+        <h2>How We Use Your Information</h2>
+        <p>Your data is used solely to improve your experience and the hiring process. We use your information to:</p>
+        <ul>
+          <li>Provide and maintain our services</li>
+          <li>Process and analyze interview responses</li>
+          <li>Improve our AI algorithms and platform features</li>
+          <li>Communicate with you about your account and updates</li>
+          <li>Ensure platform security and prevent fraud</li>
+        </ul>
+
+        <h2>Data Sharing</h2>
+        <p>We never share your information with unauthorized third parties. Your interview data may only be shared with:
+        </p>
+        <ul>
+          <li>Employers or organizations you're interviewing with (with your consent)</li>
+          <li>Service providers who assist in platform operations (under strict confidentiality agreements)</li>
+        </ul>
+
+        <h2>Data Security</h2>
+        <p>We implement industry-standard security measures to protect your personal information from unauthorized
+          access, disclosure, alteration, or destruction.</p>
+
+        <h2>Your Rights</h2>
+        <p>You have the right to:</p>
+        <ul>
+          <li>Access your personal data</li>
+          <li>Request correction of inaccurate data</li>
+          <li>Request deletion of your data</li>
+          <li>Opt-out of certain data processing activities</li>
+        </ul>
+
+        <h2>Contact Us</h2>
+        <p>For more details or questions about our privacy practices, please contact us at <a
+            href="mailto:privacy@aceview.com">privacy@aceview.com</a>.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Modal functions
+    function openModal(modalId) {
+      document.getElementById(modalId).classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('show');
+      document.body.style.overflow = 'auto';
+    }
+
+    // Event listeners for modal links
+    document.getElementById('termsLink').addEventListener('click', (e) => {
+      e.preventDefault();
+      openModal('termsModal');
+    });
+
+    document.getElementById('privacyLink').addEventListener('click', (e) => {
+      e.preventDefault();
+      openModal('privacyModal');
+    });
+
+    document.getElementById('footerTermsLink').addEventListener('click', (e) => {
+      e.preventDefault();
+      openModal('termsModal');
+    });
+
+    document.getElementById('footerPrivacyLink').addEventListener('click', (e) => {
+      e.preventDefault();
+      openModal('privacyModal');
+    });
+
+    // Close modal when clicking outside
+    window.addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal')) {
+        closeModal(e.target.id);
+      }
+    });
+
+    // Close modal with Escape key
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeModal('termsModal');
+        closeModal('privacyModal');
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.querySelector('form');
+      const inputs = form.querySelectorAll('input[required], select[required]');
+      const contactDiv = document.getElementById('contactDiv');
+      const emailInput = document.getElementById('email');
+      const emailError = document.getElementById('emailError');
+      const emailErrorText = document.getElementById('emailErrorText');
+      const passwordInput = document.querySelector('input[name="password"]');
+      const confirmPasswordInput = document.querySelector('input[name="confirm_password"]');
+      const confirmPasswordError = document.getElementById('confirmPasswordError');
+      const passError = document.getElementById('passError');
+      const passwordStrength = document.getElementById('passwordStrength');
+      const strengthText = document.getElementById('strengthText');
+
+      // Always applicant now → ensure contact is visible
+      contactDiv.style.display = 'block';
+
+      // Email availability check with debounce
+      let emailTimeout;
+      emailInput.addEventListener('input', () => {
+        clearTimeout(emailTimeout);
+        emailTimeout = setTimeout(() => {
+          const email = emailInput.value.trim();
+          if (email && email.includes('@')) {
+            fetch(`/check_email?email=${encodeURIComponent(email)}`)
+              .then(res => res.json())
+              .then(data => {
+                if (data.exists) {
+                  emailErrorText.textContent = "This email is already registered";
+                  emailError.style.display = "flex";
+                  emailInput.classList.add('error');
+                } else {
+                  emailError.style.display = "none";
+                  emailInput.classList.remove('error');
+                }
+              })
+              .catch(() => {
+                emailErrorText.textContent = "Error checking email availability";
+                emailError.style.display = "flex";
+              });
+          }
+        }, 600);
+      });
+
+      // Password strength indicator
+      passwordInput.addEventListener('input', () => {
+        const password = passwordInput.value;
+        const strengthBars = document.querySelectorAll('.strength-bar');
+
+        if (password.length === 0) {
+          passwordStrength.classList.remove('show');
+          return;
+        }
+
+        passwordStrength.classList.add('show');
+
+        let strength = 0;
+        if (password.length >= 8) strength++;
+        if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+        if (/\d/.test(password)) strength++;
+        if (/[^a-zA-Z0-9]/.test(password)) strength++;
+
+        strengthBars.forEach((bar, index) => {
+          bar.classList.remove('active', 'medium', 'strong');
+          if (index < strength) {
+            bar.classList.add('active');
+            if (strength >= 3) bar.classList.add('medium');
+            if (strength === 4) bar.classList.add('strong');
+          }
+        });
+
+        const strengthLabels = ['Weak', 'Fair', 'Good', 'Strong'];
+        strengthText.textContent = strength > 0 ? strengthLabels[strength - 1] + ' password' : 'Password strength';
+      });
+
+      // Validate password strength
+      const isPasswordValid = (password) => {
+        const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+        return regex.test(password);
+      };
+
+      // Dynamic placeholder + red styling on empty blur
+      inputs.forEach(input => {
+        const originalPlaceholder = input.placeholder;
+
+        input.addEventListener('focus', () => {
+          if (!input.value.trim()) {
+            input.placeholder = 'Please enter ' + (input.name.replace('_', ' ') || 'a value');
+          }
+        });
+
+        input.addEventListener('blur', () => {
+          const value = input.value.trim();
+          if (!value) {
+            input.classList.add('error');
+            input.placeholder = 'Please enter ' + (input.name.replace('_', ' ') || 'a value');
+          } else {
+            if (input.name === 'password' && !isPasswordValid(value)) {
+              input.classList.add('error');
+              passError.style.display = "flex";
+            } else {
+              input.classList.remove('error');
+              input.placeholder = originalPlaceholder;
+              if (input.name === 'password') {
+                passError.style.display = "none";
+              }
+            }
+          }
+        });
+
+        input.addEventListener('input', () => {
+          if (input.value.trim()) {
+            input.classList.remove('error');
+          }
+        });
+      });
+
+      // Validate if passwords match
+      confirmPasswordInput.addEventListener('input', () => {
+        if (confirmPasswordInput.value && passwordInput.value !== confirmPasswordInput.value) {
+          confirmPasswordInput.classList.add('error');
+          confirmPasswordError.style.display = 'flex';
+        } else {
+          confirmPasswordInput.classList.remove('error');
+          confirmPasswordError.style.display = 'none';
+        }
+      });
+
+      // Validation before submit
+      form.addEventListener('submit', (e) => {
+        let valid = true;
+
+        inputs.forEach(input => {
+          const value = input.value.trim();
+          if (!value) {
+            input.classList.add('error');
+            input.placeholder = 'Please enter ' + (input.name.replace('_', ' ') || 'a value');
+            valid = false;
+          } else if (input.name === 'password' && !isPasswordValid(value)) {
+            input.classList.add('error');
+            passError.style.display = "flex";
+            valid = false;
+          }
+        });
+
+        if (emailInput.classList.contains('error') || confirmPasswordInput.classList.contains('error')) {
+          valid = false;
+        }
+
+        if (!valid) {
+          e.preventDefault();
+        }
+      });
+    });
+  </script>
+
+</body>
+
+</html>

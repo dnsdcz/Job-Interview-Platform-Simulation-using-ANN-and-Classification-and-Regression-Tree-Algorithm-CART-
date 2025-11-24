@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy Policy - Aceview</title>
+
+    <style>
+        /* Reset + box model */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+        }
+
+        :root {
+            --header-bg: #1a365d;
+            --header-height: 64px;
+            /* change if you want taller header */
+            --accent: #2c5282;
+            --text: #1a365d;
+            --muted-bg: #f9fafb;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--muted-bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Header (flex-centered) */
+        .header {
+            background: var(--header-bg);
+            color: #fff;
+            height: var(--header-height);
+            display: flex;
+            align-items: center;
+            /* vertical center of header */
+            justify-content: space-between;
+            /* logo left, nav right */
+            padding: 0 20px;
+            /* keep it compact and consistent */
+            gap: 1rem;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.25rem;
+            line-height: 1;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            /* ensure nav items vertically centered */
+            gap: 1rem;
+            margin: 0;
+            padding: 0;
+        }
+
+        nav ul li {
+            display: inline-flex;
+            align-items: center;
+        }
+
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 6px 10px;
+            border-radius: 6px;
+            display: inline-block;
+            line-height: 1;
+        }
+
+        /* buttons in nav */
+        .btn-primary {
+            background-color: var(--accent);
+            padding: 6px 14px;
+            /* consistent smaller padding */
+            border-radius: 25px;
+            transition: background-color .2s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #1a365d;
+        }
+
+        /* Avoid unexpectedly wide links pushing layout */
+        nav ul li a[href=""] {
+            display: none;
+        }
+
+        /* hides empty link if present */
+
+        /* Main - centered and spaced below header */
+        main {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: calc(var(--header-height) + 32px) 16px 48px;
+            /* top padding = header + gap */
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--text);
+        }
+
+        p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: rgba(26, 54, 93, .95);
+        }
+
+        /* Footer */
+        .footer {
+            background: #2d3748;
+            color: white;
+            padding: 40px 0 20px;
+            text-align: center;
+            margin-top: 12rem;
+
+        }
+
+        .footer-bottom {
+            border-top: 1px solid #4a5568;
+            padding-top: 2rem;
+            color: #cbd5e0;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">Aceview</div>
+
+        <nav>
+            <ul>
+                <li><a href="/landing">Home</a></li>
+                <li><a href="/support">Support</a></li>
+                <li><a href="/privacy" class="btn-primary">Privacy</a></li>
+                <li><a href="/login" class="btn-primary">Login</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Main -->
+    <main>
+        <h1>Privacy Policy</h1>
+        <p>At Aceview, we are committed to protecting your privacy. This Privacy Policy explains how we collect, use,
+            and safeguard your personal information when you use our AI-powered interview platform.</p>
+        <p>Your data is used solely to improve your experience and the hiring process, and we never share your
+            information with unauthorized third parties.</p>
+        <p>For more details or questions about our privacy practices, please contact us at
+            <a href="mailto:privacy@aceview.com">privacy@aceview.com</a>.
+        </p>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-bottom">
+            &copy; 2025 Aceview. All rights reserved.
+        </div>
+    </footer>
+</body>
+
+</html>
