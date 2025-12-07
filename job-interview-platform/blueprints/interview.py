@@ -243,6 +243,7 @@ def start_interview():
     first_question = questions[0]
     return jsonify({"session_id": session_id, "question": first_question})
 
+
 @interview_bp.route("/next_question", methods=["POST"])
 def next_question():
     data = request.get_json(force=True) or {}
