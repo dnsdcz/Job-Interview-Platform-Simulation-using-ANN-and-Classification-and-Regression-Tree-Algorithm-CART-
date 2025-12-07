@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>ACEView : Job Application Form &nbsp;</title>
+  <title>H2 : Job Application Form &nbsp;</title>
 
   <!-- Fonts -->
   <link
@@ -544,7 +544,7 @@
           disqualification from the hiring process.</li>
         <li>Do not share sensitive account data such as your <strong>passwords, OTP codes, or banking PINs</strong> in
           this form.</li>
-        <li>Your information will be used only for <strong>screening and evaluation</strong> by ACEView’s HR team and
+        <li>Your information will be used only for <strong>screening and evaluation</strong> by H2’s hr team and
           automated systems.</li>
         <li>Only upload or type data that you are comfortable sharing for recruitment purposes in accordance with our
           privacy practices.</li>
@@ -573,7 +573,7 @@
     <header>
       <div>
         <div class="title">Job Application Form</div>
-        <div class="subtitle">produced by: ACEView</div>
+        <div class="subtitle">produced by: H2</div>
       </div>
       <button type="button" class="guidelines-badge" onclick="openGuidelinesModal()">
         <span class="icon">!</span>
@@ -584,7 +584,7 @@
 
     <div class="card">
       <div class="form-header-text">Please complete all required fields accurately.</div>
-      <div class="form-sub-text">Your information will be used for screening and evaluation by ACEView’s HR system.
+      <div class="form-sub-text">Your information will be used for screening and evaluation by H2 HR system.
       </div>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
@@ -625,7 +625,7 @@
             </div>
 
             <label for="emailInput">Email Address</label>
-            <div class="muted-label">This email is linked to your ACEView account.</div>
+            <div class="muted-label">This email is linked to your H2 account.</div>
             <input type="email" name="email" id="emailInput" value="{{ email }}" readonly onblur="checkEmailExists()">
             <span id="emailError" class="error-text"></span>
 
