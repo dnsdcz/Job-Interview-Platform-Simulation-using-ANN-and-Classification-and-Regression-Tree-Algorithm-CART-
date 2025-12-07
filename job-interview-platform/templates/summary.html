@@ -323,10 +323,22 @@
             color: #16a34a;
         }
 
-        .qa-status["Not Qualified"],
-        .qa-status.Not\ Qualified {
+        .qa-status {
+            font-weight: 600;
+        }
+
+        .qa-status[data-status="Qualified"] {
+            color: #16a34a;
+        }
+
+        .qa-status[data-status="Not Qualified"] {
             color: #b91c1c;
         }
+
+        .qa-status[data-status="Partially Qualified"] {
+            color: #eab308; /* example amber color */
+        }
+
 
         .summary-actions {
             display: flex;
@@ -461,16 +473,28 @@
                 </div>
             </div>
 
-            <!-- Advice -->
-            <div class="section">
-                <div class="section-title">
-                    <i class="fa-regular fa-lightbulb"></i>
-                    Advice & recommendations
-                </div>
-                <div class="section-body">
-                    <p>{{ general_advice or "No detailed advice available." }}</p>
-                </div>
-            </div>
+            <!-- Interview result message -->
+<div class="section">
+    <div class="section-title">
+        <i class="fa-regular fa-circle-check"></i>
+        Interview result
+    </div>
+    <div class="section-body">
+        <p>
+            {% if summary and summary.qualification_status == 'Qualified' %}
+                Congratulations! You just have passed. Wait for further announcement or call from us.
+            {% elif summary and summary.qualification_status == 'Partially Qualified' %}
+                Thank you for completing the interview. You met some of the expectations for this role, and we will review your application further.
+            {% elif summary and summary.qualification_status == 'Not Qualified' %}
+                Thank you for completing the interview. At this time you did not fully meet the requirements for this role.
+            {% else %}
+                Thank you for completing the interview.
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+
 
             <!-- Assessment breakdown -->
             <div class="section">
@@ -485,8 +509,12 @@
                         <div class="qa-question">Q{{ loop.index }}: {{ item.question }}</div>
                         <div class="qa-answer">A: {{ item.answer }}</div>
                         <div class="qa-meta">
-                            <span class="qa-status {{ item.status }}">{{ item.status }}</span>
+                            
+                            <span class="qa-status" data-status="{{ item.status }}">
+                                {{ item.status }}
+                            </span>
                             <span>Score: {{ item.score }}%</span>
+
                         </div>
                     </div>
                     {% endfor %}

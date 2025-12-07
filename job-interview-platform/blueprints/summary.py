@@ -13,10 +13,12 @@ from flask import (
     redirect,
     url_for,
     send_file,
+    abort,
 )
 from extensions import mysql, logger, limiter
 from services.scoring import score_many
-from services.pdf_utils import generate_pdf_summary
+from services.pdf_utils import generate_interview_pdf
+
 
 summary_bp = Blueprint("summary", __name__)
 
@@ -142,18 +144,107 @@ def save_summary_report():
 
 @summary_bp.route("/download_summary")
 def download_summary():
-    user_name = session.get("name", "Candidate")
-    position = session.get("position", "Unknown")
-    skills = session.get("skills", [])
-    status = session.get("qualification_status", "Not Qualified")
+    """
+    Generate and download a concise PDF summary for the latest chatbot
+    record for the logged-in user, using the richer layout.
+    """
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("auth.login"))
 
-    if isinstance(skills, list):
-        skills_str = ", ".join(skills)
+    cur = None
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute(
+            """
+            SELECT user_name,
+                   position,
+                   qualification_status,
+                   confidence,
+                   average_score,
+                   skills,
+                   created_at
+            FROM chatbot
+            WHERE user_id = %s
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (user_id,),
+        )
+        row = cur.fetchone()
+    except Exception as e:
+        logger.error(f"Error fetching chatbot row in download_summary: {e}")
+        if cur:
+            cur.close()
+        abort(500)
+
+    if not row:
+        if cur:
+            cur.close()
+        abort(404)
+
+    (
+        user_name,
+        position,
+        qualification_status,
+        confidence,
+        average_score,
+        skills_raw,
+        created_at,
+    ) = row
+    cur.close()
+
+    # Main result message (same as summary page)
+    if qualification_status == "Qualified":
+        result_message = (
+            "Congratulations! You just have passed. "
+            "Wait for further announcement or call from us."
+        )
+    elif qualification_status == "Partially Qualified":
+        result_message = (
+            "Thank you for completing the interview. "
+            "You met some of the expectations for this role, "
+            "and we will review your application further."
+        )
     else:
-        skills_str = str(skills)
+        result_message = (
+            "Thank you for completing the interview. "
+            "At this time you did not fully meet the requirements for this role."
+        )
 
-    path = generate_pdf_summary(user_name, position, skills_str, status)
-    return send_file(path, as_attachment=True)
+    # Decode skills → remarks
+    try:
+        skills = json.loads(skills_raw) if skills_raw else []
+    except Exception:
+        skills = []
+
+    remarks = []
+    if skills:
+        remarks.append("Key skills highlighted in this application:")
+        for s in skills:
+            remarks.append(f"• {s}")
+    remarks.append("This report is generated automatically by the AI interview platform.")
+
+    # Safe filename
+    ts_str = created_at.strftime("%Y%m%d_%H%M%S") if isinstance(
+        created_at, datetime
+    ) else datetime.now().strftime("%Y%m%d_%H%M%S")
+    safe_name = user_name.replace("/", "-")
+    safe_position = position.replace("/", "-")
+    filename = f"{safe_name}_{safe_position}_{ts_str}.pdf"
+
+    pdf_path = generate_interview_pdf(
+        filename=filename,
+        candidate_name=user_name,
+        position=position,
+        qualification_status=qualification_status,
+        result_message=result_message,
+        match_score_pct=confidence,
+        average_score=average_score,
+        remarks=remarks,
+    )
+
+    return send_file(pdf_path, as_attachment=True)
 
 
 @summary_bp.route("/generate_pdf", methods=["POST"])

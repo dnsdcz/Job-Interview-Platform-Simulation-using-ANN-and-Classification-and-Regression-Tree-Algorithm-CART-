@@ -1,9 +1,16 @@
 # services/questions.py
-from typing import List, Dict
+from __future__ import annotations
+
+import random
+from typing import List, Dict, Iterable
 
 
-# your original question bank (unchanged)
-role_questions: Dict[str, Dict[str, list]] = {
+# ---------------------------------------------------------------------------
+# Question bank
+# ---------------------------------------------------------------------------
+
+# Your original question bank (slightly formatted but unchanged in content)
+role_questions: Dict[str, Dict[str, List[str]]] = {
     "business_analyst": {
         "junior": [
             "Tell me about yourself.",
@@ -117,7 +124,20 @@ role_questions: Dict[str, Dict[str, list]] = {
 }
 
 
+# ---------------------------------------------------------------------------
+# Experience level / role normalization
+# ---------------------------------------------------------------------------
+
 def get_experience_level(years: int) -> str:
+    """
+    Map years of experience to an experience level bucket.
+
+    Args:
+        years: Total years of relevant experience.
+
+    Returns:
+        One of: "junior", "mid", "senior", "special".
+    """
     if years <= 2:
         return "junior"
     if 3 <= years <= 5:
@@ -128,7 +148,23 @@ def get_experience_level(years: int) -> str:
 
 
 def normalize_position(position: str) -> str:
-    """Map UI labels to role_questions keys."""
+    """
+    Map a free-text position label from the UI to an internal role key.
+
+    This keeps the rest of the system using consistent keys (the dict keys
+    in `role_questions`), while the UI can show more user-friendly titles.
+
+    Args:
+        position: The raw position string, e.g. "Business Analyst",
+                  "Senior Java Developer", etc.
+
+    Returns:
+        A normalized role key such as "business_analyst", "project_manager",
+        or "java_developer". Defaults to "business_analyst" if unsure.
+    """
+    if not position:
+        return "business_analyst"
+
     p = position.lower()
     if "business" in p and "analyst" in p:
         return "business_analyst"
@@ -136,18 +172,36 @@ def normalize_position(position: str) -> str:
         return "project_manager"
     if "java" in p or "developer" in p:
         return "java_developer"
-    # default
+
+    # default fallback
     return "business_analyst"
 
 
 def get_questions_for(position: str, years_experience: int) -> List[str]:
+    """
+    Get the static question list for a given role and experience level.
+
+    This is backwards-compatible with your original implementation and
+    can be safely used anywhere in the codebase.
+
+    Args:
+        position: UI label or raw position text.
+        years_experience: Candidate's years of experience.
+
+    Returns:
+        A list of questions for that role/level. Returns an empty list
+        if no questions are configured.
+    """
     role_key = normalize_position(position)
     level = get_experience_level(years_experience)
     return role_questions.get(role_key, {}).get(level, [])
 
 
-# optional keyword-based templates (for dynamic follow-up)
-keyword_templates = {
+# ---------------------------------------------------------------------------
+# Optional keyword-based dynamic follow-up templates
+# ---------------------------------------------------------------------------
+
+keyword_templates: Dict[str, str] = {
     "python": "Tell me about your experience with Python.",
     "django": "Have you used Django in any of your projects?",
     "team": "Describe your role in a team project.",
@@ -156,3 +210,106 @@ keyword_templates = {
     "communication": "How do you ensure good team communication?",
     "sql": "Tell me about your experience with SQL.",
 }
+
+
+def infer_followup_questions(
+    user_text: str,
+    max_followups: int | None = 2,
+) -> List[str]:
+    """
+    Infer dynamic follow-up questions based on keywords in the user's text.
+
+    Example usage in your chat flow:
+        followups = infer_followup_questions(last_answer)
+        for q in followups:
+            ask(q)
+
+    Args:
+        user_text: The candidate's free-text answer or profile.
+        max_followups: Optional maximum number of follow-up questions to return.
+                       Use None for no limit.
+
+    Returns:
+        A list of follow-up question strings. May be empty.
+    """
+    text = (user_text or "").lower()
+    found: List[str] = []
+
+    for keyword, question in keyword_templates.items():
+        if keyword in text:
+            found.append(question)
+
+    # De-duplicate while preserving order
+    seen = set()
+    unique_found: List[str] = []
+    for q in found:
+        if q not in seen:
+            unique_found.append(q)
+            seen.add(q)
+
+    if max_followups is not None:
+        unique_found = unique_found[:max_followups]
+
+    return unique_found
+
+
+# ---------------------------------------------------------------------------
+# Higher-level helpers for the chatbot / UI
+# ---------------------------------------------------------------------------
+
+def generate_interview_questions(
+    position: str,
+    years_experience: int,
+    max_questions: int | None = None,
+    shuffle: bool = True,
+) -> List[str]:
+    """
+    Generate the main list of interview questions for a candidate.
+
+    This wraps `get_questions_for` and adds:
+    - optional shuffling (to avoid same fixed order every time)
+    - optional maximum number of questions
+
+    Args:
+        position: Raw position label from the UI.
+        years_experience: Candidate's years of experience.
+        max_questions: Optionally limit number of questions. If None,
+                       returns all questions.
+        shuffle: Whether to randomize the order of questions.
+
+    Returns:
+        A list of questions ready to be used in the interview flow.
+    """
+    questions = list(get_questions_for(position, years_experience))
+
+    if shuffle:
+        random.shuffle(questions)
+
+    if max_questions is not None:
+        questions = questions[:max_questions]
+
+    return questions
+
+
+def extend_with_dynamic_followups(
+    base_questions: Iterable[str],
+    user_profile_text: str,
+    max_followups: int | None = 2,
+) -> List[str]:
+    """
+    Convenience helper: take a base question list, and extend it with
+    dynamic follow-up questions inferred from some user text (e.g., CV,
+    self-introduction, or previous answers).
+
+    Args:
+        base_questions: Existing list/iterable of questions.
+        user_profile_text: Text to scan for keywords.
+        max_followups: Cap on number of dynamic follow-ups to append.
+
+    Returns:
+        A new list containing the original questions plus dynamic follow-ups.
+    """
+    questions = list(base_questions)
+    followups = infer_followup_questions(user_profile_text, max_followups=max_followups)
+
+    return questions + followups

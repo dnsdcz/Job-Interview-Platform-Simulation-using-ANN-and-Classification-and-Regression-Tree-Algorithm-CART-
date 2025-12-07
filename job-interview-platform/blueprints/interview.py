@@ -1,4 +1,8 @@
 # blueprints/interview.py
+from __future__ import annotations
+
+from typing import Any, Dict, List, Optional
+
 from flask import (
     Blueprint,
     render_template,
@@ -23,14 +27,20 @@ from services.scoring import (
 interview_bp = Blueprint("interview", __name__)
 
 
-def _get_current_user():
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _get_current_user() -> Optional[tuple[str, str, str]]:
     """
-    Helper to fetch the currently logged-in user's basic info.
-    Returns (email, username, contact) or (None, None, None) if not found.
+    Fetch the currently logged-in user's (email, username, contact_number).
+
+    Returns:
+        (email, username, contact_number) or None if not found / error.
     """
     user_id = session.get("user_id")
     if not user_id:
-        return None, None, None
+        return None
 
     cur = None
     try:
@@ -41,16 +51,20 @@ def _get_current_user():
         )
         user = cur.fetchone()
         if not user:
-            return None, None, None
+            return None
         email, username, contact = user
         return email, username, contact
     except Exception as e:
         logger.error(f"❌ Error fetching user in _get_current_user: {e}")
-        return None, None, None
+        return None
     finally:
         if cur:
             cur.close()
 
+
+# ---------------------------------------------------------------------------
+# Routes
+# ---------------------------------------------------------------------------
 
 @interview_bp.route("/chatapp")
 def chat_app():
@@ -62,13 +76,17 @@ def chat_app():
     if "user_id" not in session:
         return redirect(url_for("auth.login"))
 
-    email, username, contact = _get_current_user()
-    if not email:
+    user_id = session["user_id"]
+
+    user_info = _get_current_user()
+    if not user_info:
         flash("User not found.", "error")
         return redirect(url_for("auth.login"))
 
-    user_id = session["user_id"]
+    email, username, contact = user_info
+
     cur = None
+    result = None
     try:
         cur = mysql.connection.cursor()
         cur.execute(
@@ -90,7 +108,6 @@ def chat_app():
         result = cur.fetchone()
     except Exception as e:
         logger.error(f"❌ Error fetching chatbot record in /chatapp: {e}")
-        result = None
     finally:
         if cur:
             cur.close()
@@ -146,6 +163,7 @@ def chatbot_page():
     position = session.get("position", "Business Analyst")
 
     cur = None
+    existing = None
     try:
         cur = mysql.connection.cursor()
         cur.execute(
@@ -155,7 +173,6 @@ def chatbot_page():
         existing = cur.fetchone()
     except Exception as e:
         logger.error(f"❌ Error checking existing chatbot in /chat: {e}")
-        existing = None
     finally:
         if cur:
             cur.close()
@@ -182,14 +199,16 @@ def get_questions_route():
     position = request.args.get("position") or session.get(
         "position", "Business Analyst"
     )
+
     try:
         exp = int(request.args.get("experience") or session.get("experience", 0))
-    except ValueError:
+    except (ValueError, TypeError):
         exp = 0
 
     questions = get_questions_for(position, exp)
     if not questions:
         return jsonify({"error": "No questions available"}), 404
+
     return jsonify({"questions": questions})
 
 
@@ -201,49 +220,55 @@ def start_interview():
     - Loads questions based on position & years_of_experience
     - Resets question index & history
     """
-    data = request.get_json(force=True) or {}
+    data: Dict[str, Any] = request.get_json(force=True) or {}
 
     position = data.get("position") or session.get("position", "Business Analyst")
     try:
         years = int(data.get("years_of_experience") or session.get("experience", 0))
-    except ValueError:
+    except (ValueError, TypeError):
         years = 0
 
     questions = get_questions_for(position, years)
-
     if not questions:
         return jsonify({"error": "No questions found for this role."}), 400
 
     session_id = str(uuid.uuid4())
     session["session_id"] = session_id
-    session["questions"] = questions  # list[str]
+    session["questions"] = questions
     session["question_index"] = 0
     session["answers_history"] = []
+    session["position"] = position
+    session["experience"] = years
 
     first_question = questions[0]
     return jsonify({"session_id": session_id, "question": first_question})
 
-
 @interview_bp.route("/next_question", methods=["POST"])
 def next_question():
-    """
-    Accepts the current answer, scores it, stores it in session,
-    and returns the next question or a summary if finished.
-    """
     data = request.get_json(force=True) or {}
-    answer = data.get("answer", "").strip()
-    current_question = data.get("question", "").strip()
+    answer = (data.get("answer") or "").strip()
+    current_question = (data.get("question") or "").strip()
 
+    # Use questions stored in session (set in /start-interview)
     questions = session.get("questions") or []
-    idx = session.get("question_index", 0)
+    idx = int(session.get("question_index", 0))
+
+    # Fallback: if questions got lost from session, recompute
+    if not questions:
+        position = session.get("position", "Business Analyst")
+        try:
+            years = int(session.get("experience", 0))
+        except (ValueError, TypeError):
+            years = 0
+        questions = get_questions_for(position, years)
+        session["questions"] = questions
 
     if not questions:
-        return jsonify({"error": "Interview session not initialized."}), 400
+        return jsonify({"error": "Interview session not initialized properly."}), 400
 
-    # Save and score answer
+    # Save and score current answer
     if answer and current_question:
         results = score_answer_combined(current_question, answer)
-
         history = session.get("answers_history", [])
         history.append(
             {
@@ -257,7 +282,7 @@ def next_question():
         idx += 1
         session["question_index"] = idx
 
-    # Finished all questions
+    # ---------- FINISHED ALL QUESTIONS ---------- #
     if idx >= len(questions):
         answers_history = session.get("answers_history", [])
 
@@ -265,25 +290,69 @@ def next_question():
             {"question": h["question"], "answer": h["answer"]}
             for h in answers_history
         ]
-
         summary = score_many(qa_pairs)
         advice = generate_detailed_advice(
             summary["answers"], summary["average_score"]
         )
 
-        # store for later usage (e.g., summary page)
+        # compute "match score" and "confidence" from qualified answers
+        qualified_count = sum(
+            1
+            for ans in summary.get("answers", [])
+            if ans.get("qualification_status") == "Qualified"
+        )
+        total_answers = len(summary.get("answers", [])) or 1
+        match_score_pct = round(100.0 * qualified_count / total_answers, 2)
+        confidence_pct = match_score_pct  # or tweak if you want a different logic
+
+        # store for later usage (e.g., summary report, pdf)
         session["qualification_status"] = summary["qualification_status"]
+
+        # ---------- SAVE TO DATABASE ---------- #
+        try:
+            user_id = session.get("user_id")
+            name = session.get("name")
+            position = session.get("position")
+            experience = session.get("experience")
+
+            cur = mysql.connection.cursor()
+            cur.execute(
+                """
+                INSERT INTO chatbot
+                    (user_id, user_name, position, experience,
+                     qualification_status, confidence, average_score)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    user_id,
+                    name,
+                    position,
+                    experience,
+                    summary["qualification_status"],
+                    confidence_pct,
+                    summary["average_score"],
+                ),
+            )
+            mysql.connection.commit()
+            cur.close()
+        except Exception as e:
+            logger.error(f"❌ Failed to save chatbot summary: {e}")
 
         return jsonify(
             {
                 "finished": True,
-                "summary": summary,
+                "summary": {
+                    **summary,
+                    "match_score_pct": match_score_pct,
+                    "qualified_count": qualified_count,
+                    "total_answers": total_answers,
+                },
                 "advice": advice,
                 "answers_history": answers_history,
             }
         )
 
-    # Not finished → return next question
+    # ---------- NOT FINISHED → NEXT QUESTION ---------- #
     next_q = questions[idx]
     return jsonify(
         {
@@ -302,14 +371,24 @@ def score_answer_route():
     Scores a single question-answer pair.
     Used for instant feedback per answer.
     """
-    data = request.get_json(force=True) or {}
-    question = data.get("question", "").strip()
-    answer = data.get("answer", "").strip()
+    data: Dict[str, Any] = request.get_json(force=True) or {}
+    question = (data.get("question") or "").strip()
+    answer = (data.get("answer") or "").strip()
 
     if not question or not answer:
         return jsonify({"error": "Missing question or answer."}), 400
 
-    result = score_answer_single(question, answer)
+    try:
+        result = score_answer_single(question, answer)
+    except Exception as e:
+        logger.error(f"❌ Error in /score_answer: {e}")
+        return jsonify(
+            {
+                "error": "Failed to score the answer.",
+                "details": "Internal scoring error.",
+            }
+        ), 500
+
     return jsonify(result)
 
 
@@ -317,8 +396,13 @@ def score_answer_route():
 def score_many_route():
     """
     Scores multiple question-answer pairs sent from the frontend.
+    Expects:
+        {
+            "questions": [...],
+            "answers": [...]
+        }
     """
-    data = request.get_json(force=True) or {}
+    data: Dict[str, Any] = request.get_json(force=True) or {}
     questions = data.get("questions", [])
     answers = data.get("answers", [])
 
@@ -329,7 +413,13 @@ def score_many_route():
         {"question": q, "answer": a}
         for q, a in zip(questions, answers)
     ]
-    summary = score_many(qa_pairs)
+
+    try:
+        summary = score_many(qa_pairs)
+    except Exception as e:
+        logger.error(f"❌ Error in /score: {e}")
+        return jsonify({"error": "Failed to score answers."}), 500
+
     return jsonify(summary)
 
 
@@ -338,17 +428,29 @@ def submit_interview():
     """
     Endpoint to submit the full interview from frontend, score all answers,
     and return overall feedback.
+
+    Expects:
+        {
+            "answers": [
+                {"question": "...", "answer": "..."},
+                ...
+            ]
+        }
     """
-    data = request.get_json(force=True) or {}
-    answers = data.get("answers", [])  # [{question, answer}, ...]
+    data: Dict[str, Any] = request.get_json(force=True) or {}
+    answers: List[Dict[str, Any]] = data.get("answers", [])
 
     if not answers:
         return jsonify({"error": "No answers submitted."}), 400
 
-    summary = score_many(answers)
-    advice = generate_detailed_advice(
-        summary["answers"], summary["average_score"]
-    )
+    try:
+        summary = score_many(answers)
+        advice = generate_detailed_advice(
+            summary["answers"], summary["average_score"]
+        )
+    except Exception as e:
+        logger.error(f"❌ Error in /submit_interview: {e}")
+        return jsonify({"error": "Failed to process interview."}), 500
 
     return jsonify(
         {
@@ -359,13 +461,12 @@ def submit_interview():
         }
     )
 
-
 @interview_bp.route("/get_interview_summary", methods=["GET"])
 def get_interview_summary():
     """
     Returns the interview summary based on answers stored in the session.
     """
-    answers_history = session.get("answers_history", [])
+    answers_history: List[Dict[str, Any]] = session.get("answers_history", [])
     if not answers_history:
         return jsonify({"error": "No answers submitted yet"}), 400
 
@@ -373,10 +474,34 @@ def get_interview_summary():
         {"question": h["question"], "answer": h["answer"]}
         for h in answers_history
     ]
-    summary = score_many(qa_pairs)
-    advice = generate_detailed_advice(
-        summary["answers"], summary["average_score"]
-    )
+
+    try:
+        summary = score_many(qa_pairs)
+
+        # Get overall status (Qualified / Partially Qualified / Not Qualified)
+        status = summary.get("qualification_status", "Not Qualified")
+
+        # --- Custom advice text based on status ---
+        if status == "Qualified":
+            advice = (
+                "Congratulations! You just have passed. "
+                "Wait for further announcement or call from us."
+            )
+        elif status == "Partially Qualified":
+            advice = (
+                "Thank you for completing the interview. "
+                "You met some of the expectations for this role, "
+                "and we will review your application further."
+            )
+        else:  # Not Qualified
+            advice = (
+                "Thank you for completing the interview. "
+                "At this time you did not fully meet the requirements for this role."
+            )
+
+    except Exception as e:
+        logger.error(f"❌ Error in /get_interview_summary: {e}")
+        return jsonify({"error": "Failed to build interview summary."}), 500
 
     return jsonify(
         {
