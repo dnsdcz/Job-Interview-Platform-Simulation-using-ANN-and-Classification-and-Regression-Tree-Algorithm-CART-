@@ -3,32 +3,31 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard</title>
+    <title>Application Overview</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-    <!-- Add in your <head> -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
-    <!-- Add before closing </body> -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <style>
-        /* Existing styles remain the same */
         :root {
-            --primary-color: #4361ee;
-            --secondary-color: #3f37c9;
+            --primary-color: #B2271B;
+            --secondary-color: #921E15;
             --success-color: #10b981;
             --warning-color: #f59e0b;
             --danger-color: #ef4444;
             --text-light: #f8f9fa;
             --text-dark: #212529;
-            --bg-light: #f8f9fa;
+            --bg-light: #FAFBFB;
             --bg-dark: #121212;
             --card-light: #ffffff;
             --card-dark: #2c2c2c;
-            --sidebar-light: #f0f0f0;
-            --sidebar-dark: #2d3748;
+            --sidebar-light: #F5F5F5;
+            --sidebar-dark: #3b0f0f;
             --transition: all 0.3s ease;
         }
 
@@ -40,7 +39,7 @@
         }
 
         body {
-            background: url("{{ url_for('static', filename = 'bg.png')}}") no-repeat center center fixed;
+            background: white;
             background-size: cover;
             background-color: var(--bg-light);
             color: var(--text-dark);
@@ -52,23 +51,50 @@
             overflow-x: hidden;
         }
 
-        body .user-name {
-
-            color: #ffffff;
+        /* Global default font */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
+
+        /* Base font for whole site */
+        body {
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+
+        /* Stronger, more distinctive headings */
+        h1,
+        h2,
+        h3,
+        .applicant-heading,
+        .card-title,
+        .nav-link .nav-text,
+        .logo span {
+            font-family: "Outfit", "Inter", sans-serif;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
 
         body.dark {
             background-color: var(--bg-dark);
             color: var(--text-light);
         }
 
-        /* Header Styling */
+        body.overlay-open {
+            overflow: hidden;
+        }
+
+        /* Header */
         .topbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 1rem 2rem;
-            background-color: #1E3E62;
+            background-color: var(--primary-color);
             border-bottom: 1px solid #e0e0e0;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             transition: var(--transition);
@@ -77,23 +103,22 @@
         }
 
         body.dark .topbar {
-            background-color: rgba(33, 33, 33, 0.95);
+            background-color: rgba(25, 9, 9, 0.95);
             border-color: #444;
         }
 
         .logo {
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             font-weight: 700;
             color: #ffffff;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
             cursor: pointer;
         }
 
-        .logo::before {
-            content: "📊";
-            font-size: 1.5rem;
+        .logo i {
+            font-size: 1.4rem;
         }
 
         .right {
@@ -102,7 +127,6 @@
             gap: 1.5rem;
         }
 
-        /* User profile section */
         .user-profile {
             display: flex;
             align-items: center;
@@ -116,19 +140,19 @@
         .user-name {
             font-weight: 600;
             font-size: 1rem;
+            color: #ffffff;
         }
 
         .date-time {
             font-size: 0.8rem;
-            color: #666;
+            color: #f0f0f0;
             transition: var(--transition);
         }
 
         body.dark .date-time {
-            color: #aaa;
+            color: #ddd;
         }
 
-        /* Theme toggle button */
         .toggle-theme {
             cursor: pointer;
             background-color: #e9ecef;
@@ -137,9 +161,13 @@
             font-size: 0.9rem;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
             transition: var(--transition);
             border: none;
+        }
+
+        .toggle-theme i {
+            font-size: 1rem;
         }
 
         body.dark .toggle-theme {
@@ -152,10 +180,9 @@
             box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
         }
 
-        /* Menu icon */
         .menu-icon {
             cursor: pointer;
-            display: flex;
+            display: none;
             flex-direction: column;
             gap: 5px;
             padding: 0.5rem;
@@ -166,23 +193,15 @@
         .menu-icon div {
             width: 25px;
             height: 3px;
-            background-color: var(--text-dark);
+            background-color: var(--text-light);
             transition: var(--transition);
         }
 
-        body.dark .menu-icon div {
-            background-color: var(--text-light);
-        }
-
         .menu-icon:hover {
-            background-color: rgba(0, 0, 0, 0.05);
+            background-color: rgba(255, 255, 255, 0.1);
         }
 
-        body.dark .menu-icon:hover {
-            background-color: rgba(255, 255, 255, 0.05);
-        }
-
-        /* Main content area */
+        /* Layout */
         .container {
             display: flex;
             flex-grow: 1;
@@ -190,126 +209,129 @@
         }
 
         /* Sidebar */
-        /* Sidebar */
         .sidebar {
             width: 260px;
             background-color: var(--sidebar-light);
             backdrop-filter: blur(15px);
-            box-shadow: 2px 0 30px rgba(0, 0, 0, 0.1);
-            transform: translateX(-100%);
-            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: 2px 0 30px rgba(0, 0, 0, 0.08);
             position: fixed;
-            height: 100%;
-            top: 80px;
+            top: 72px;
             bottom: 0;
             left: 0;
-            z-index: 999;
+            z-index: 90;
             overflow-y: auto;
-            gap: 1.5rem;
-            padding: 2rem 1.5rem;
-            border-right: 1px solid rgba(90, 103, 216, 0.1);
+            padding: 1.5rem 1.25rem;
+            border-right: 1px solid rgba(178, 39, 27, 0.12);
+            transition: var(--transition);
         }
 
-
-
-
-        .sidebar.show {
-            transform: translateX(0);
+        body.dark .sidebar {
+            background-color: var(--sidebar-dark);
         }
 
         .sidebar::-webkit-scrollbar {
             width: 6px;
         }
 
-        .sidebar::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
         .sidebar::-webkit-scrollbar-thumb {
-            background: rgba(90, 103, 216, 0.3);
+            background: rgba(178, 39, 27, 0.3);
             border-radius: 3px;
         }
 
         .sidebar::-webkit-scrollbar-thumb:hover {
-            background: rgba(90, 103, 216, 0.5);
+            background: rgba(178, 39, 27, 0.5);
         }
 
-        body.dark .sidebar {
-            background-color: #1E3E62;
-        }
-
-
-
-        .applicant-profile {
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.8);
-            border-radius: 12px;
-            margin-bottom: 1rem;
-            margin-top: 1rem;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-            transition: var(--transition);
-            animation: slideInFromTop 0.6s ease-out;
-        }
-
-        body.dark .applicant-profile {
-            background: rgba(45, 55, 72, 0.8);
-        }
-
-        .profile-header {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .profile-photo {
-            width: 70px;
-            height: 70px;
+        .sidebar-toggle-btn {
+            position: absolute;
+            top: 0.9rem;
+            right: 0.9rem;
+            width: 26px;
+            height: 26px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #4361ee, #3a0ca3);
+            border: none;
+            background-color: #ffffff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 1.8rem;
-            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .sidebar-toggle-btn i {
+            font-size: 1.1rem;
+            color: var(--primary-color);
+        }
+
+        body.dark .sidebar-toggle-btn {
+            background-color: #2c2c2c;
+        }
+
+        .sidebar-toggle-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .sidebar.collapsed {
+            width: 80px;
+            padding: 1.5rem 0.6rem;
+        }
+
+        .sidebar.collapsed .sidebar-toggle-btn {
+            right: 0.4rem;
+            transform: rotate(180deg);
+        }
+
+        .applicant-profile {
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            margin-top: 2.3rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.03);
+            transition: var(--transition);
+        }
+
+        body.dark .applicant-profile {
+            background: rgba(59, 15, 15, 0.9);
+        }
+
+        .profile-header {
+            margin-bottom: 1.2rem;
         }
 
         .profile-name {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: 600;
-            line-height: 1.4;
         }
 
         .profile-role {
             font-size: 0.85rem;
             color: #555;
-            transition: var(--transition);
         }
 
         body.dark .profile-role {
-            color: #bbb;
+            color: #eee;
         }
 
         .profile-info {
-            margin-top: 1rem;
+            margin-top: 0.8rem;
         }
 
         .info-item {
             display: flex;
-            margin-bottom: 0.8rem;
-            font-size: 0.95rem;
+            margin-bottom: 0.6rem;
+            font-size: 0.9rem;
         }
 
         .info-label {
             font-weight: 600;
-            width: 80px;
+            width: 70px;
             color: #555;
-            transition: var(--transition);
         }
 
         body.dark .info-label {
-            color: #bbb;
+            color: #f0f0f0;
         }
 
         .info-value {
@@ -320,7 +342,7 @@
         .nav-menu {
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
+            gap: 0.3rem;
             margin-top: 1rem;
         }
 
@@ -328,12 +350,20 @@
             display: flex;
             align-items: center;
             gap: 0.8rem;
-            padding: 0.8rem 1rem;
-            border-radius: 8px;
+            padding: 0.7rem 0.8rem;
+            border-radius: 10px;
             color: var(--text-dark);
             text-decoration: none;
-            transition: #79a1b8;
+            transition: var(--transition);
             font-weight: 500;
+        }
+
+        .nav-link i {
+            font-size: 1.2rem;
+        }
+
+        .nav-text {
+            white-space: nowrap;
         }
 
         body.dark .nav-link {
@@ -341,32 +371,84 @@
         }
 
         .nav-link:hover {
-            background-color: rgba(67, 97, 238, 0.1);
+            background-color: rgba(178, 39, 27, 0.08);
             color: var(--primary-color);
         }
 
         body.dark .nav-link:hover {
-            background-color: rgba(67, 97, 238, 0.2);
+            background-color: rgba(178, 39, 27, 0.18);
         }
 
         .nav-link.active {
-            background-color: #79a1b8;
+            background-color: var(--primary-color);
             color: white;
         }
 
-        /* Main content */
+        .sidebar.collapsed .nav-text,
+        .sidebar.collapsed .applicant-profile,
+        .sidebar.collapsed .profile-info {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(-5px);
+        }
+
+        .sidebar.collapsed .profile-name,
+        .sidebar.collapsed .profile-role {
+            display: none;
+        }
+
+        .sidebar.collapsed:hover {
+            width: 260px;
+            padding: 1.5rem 1.25rem;
+        }
+
+        .sidebar.collapsed:hover .nav-text,
+        .sidebar.collapsed:hover .applicant-profile,
+        .sidebar.collapsed:hover .profile-info {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(0);
+        }
+
+        .sidebar.collapsed:hover .profile-name,
+        .sidebar.collapsed:hover .profile-role {
+            display: block;
+        }
+
         .main-content {
             flex-grow: 1;
             padding: 2rem;
-            margin-left: 0;
+            margin-left: 260px;
             transition: var(--transition);
         }
 
-        .sidebar.show~.main-content {
-            margin-left: 260px;
+        .sidebar.collapsed~.main-content {
+            margin-left: 80px;
         }
 
-        /* Dashboard cards */
+        .applicant-header {
+            margin-bottom: 2rem;
+        }
+
+        .applicant-heading {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .applicant-subtext {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        body.dark .applicant-subtext {
+            color: var(--primary-color);
+        }
+
+        body.dark .applicant-heading {
+            color: var(--primary-color);
+        }
+
         .applicant-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -402,228 +484,20 @@
         .card-title {
             font-size: 1.3rem;
             font-weight: 600;
-            color: #79a1b8;
+            color: var(--primary-color);
         }
 
         .card-icon {
             width: 45px;
             height: 45px;
-            background: linear-gradient(135deg, rgba(67, 97, 238, 0.2), rgba(58, 12, 163, 0.2));
+            background: linear-gradient(135deg, rgba(178, 39, 27, 0.18), rgba(146, 30, 21, 0.18));
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
-        }
-
-        .card-content {
-            margin-bottom: 1.5rem;
-        }
-
-        .rating-container {
-            margin-top: 1rem;
-        }
-
-        .rating-label {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            display: block;
-        }
-
-        .rating-value {
-            font-size: 2.2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            color: var(--primary-color);
-        }
-
-        .rating-description {
-            margin-bottom: 1.5rem;
-            color: #555;
-            font-size: 0.95rem;
-            line-height: 1.5;
-        }
-
-        body.dark .rating-description {
-            color: #aaa;
-        }
-
-        .status-container {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background-color: rgba(16, 185, 129, 0.1);
-            border-radius: 8px;
-            width: fit-content;
-            margin-bottom: 1rem;
-        }
-
-        .status-container.qualified {
-            background-color: rgba(16, 185, 129, 0.1);
-            color: #10b981;
-        }
-
-        .status-container.review {
-            background-color: rgba(245, 158, 11, 0.1);
-            color: #f59e0b;
-        }
-
-        .status-container.not-qualified {
-            background-color: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
-        }
-
-        .status-icon {
-            font-size: 1.2rem;
-        }
-
-        .status-text {
-            font-weight: 600;
-        }
-
-        .action-button {
-            display: block;
-            width: 100%;
-            padding: 0.8rem 1rem;
-            background-color: #5c6c7d;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: var(--transition);
-            text-align: center;
-            text-decoration: none;
-            margin-top: 0.5rem;
-        }
-
-        .action-button:hover {
-            background-color: #1E3E62;
-            transform: translateY(-2px);
-        }
-
-        /* Progress bar */
-        .progress-container {
-            margin-top: 1.5rem;
-        }
-
-        .progress-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        .progress-bar {
-            height: 10px;
-            width: 100%;
-            background-color: #e9ecef;
-            border-radius: 50px;
-            overflow: hidden;
-        }
-
-        body.dark .progress-bar {
-            background-color: #444;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-            width: 60%;
-            border-radius: 50px;
-            transition: width 1s ease-in-out;
-        }
-
-        /* Applicant header */
-        .applicant-header {
-            margin-bottom: 2rem;
-        }
-
-        .applicant-heading {
             font-size: 1.8rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
         }
 
-        .applicant-subtext {
-            color: #666;
-            font-size: 1.1rem;
-        }
-
-        body.dark .applicant-subtext {
-            color: #1E3E62;
-        }
-
-        body.dark .applicant-heading {
-            color: #1E3E62;
-        }
-
-        /* Responsive adjustments */
-        @media screen and (max-width: 992px) {
-            .sidebar.show~.main-content {
-                margin-left: 0;
-            }
-
-            .sidebar {
-                width: 100%;
-                max-width: 300px;
-            }
-        }
-
-        @media screen and (max-width: 768px) {
-            .topbar {
-                padding: 0.8rem 1.5rem;
-            }
-
-            .applicant-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .applicant-heading {
-                font-size: 1.5rem;
-            }
-
-            .sidebar {
-                width: 100%;
-                max-width: 100%;
-            }
-        }
-
-        @media screen and (max-width: 576px) {
-            .right {
-                gap: 0.8rem;
-            }
-
-            .user-profile {
-                display: none;
-            }
-
-            .main-content {
-                padding: 1.5rem 1rem;
-            }
-        }
-
-        .chatbot-btn {
-            margin-top: 30px;
-            padding: 12px 25px;
-            font-size: 16px;
-            font-weight: bold;
-            color: white;
-            background-color: #4caf50;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .chatbot-btn:hover {
-            background-color: #388e3c;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Status badge styling */
         .status-badge {
             display: inline-block;
             padding: 4px 12px;
@@ -643,66 +517,298 @@
             color: #ef4444;
         }
 
+        .action-button {
+            display: block;
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+            text-decoration: none;
+            margin-top: 0.5rem;
+        }
+
+        .action-button:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .action-button.disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        /* OVERLAY MODALS */
+        .overlay-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1200;
+        }
+
+        .overlay-modal.show {
+            display: flex;
+        }
+
+        .overlay-dialog {
+            background: var(--card-light);
+            color: var(--text-dark);
+            border-radius: 18px;
+            max-width: 960px;
+            width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 24px 24px 28px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+            position: relative;
+        }
+
+        body.dark .overlay-dialog {
+            background: #1f2933;
+            color: var(--text-light);
+        }
+
+        .overlay-close {
+            position: absolute;
+            top: 14px;
+            right: 16px;
+            border: none;
+            background: transparent;
+            font-size: 1.6rem;
+            cursor: pointer;
+            color: #6b7280;
+        }
+
+        body.dark .overlay-close {
+            color: #d1d5db;
+        }
+
+        .overlay-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .overlay-title {
+            font-size: 1.7rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .overlay-subtitle {
+            font-size: 0.95rem;
+            color: #6b7280;
+        }
+
+        body.dark .overlay-subtitle {
+            color: #9ca3af;
+        }
+
+        .overlay-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .profile-photo-block {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .photo-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background-color: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            overflow: hidden;
+            border: 3px solid #fff;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+        }
+
+        .photo-circle img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .overlay-upload-btn {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background-color 0.2s;
+        }
+
+        .overlay-upload-btn:hover {
+            background-color: #357bd8;
+        }
+
+        .detail-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding-bottom: 0.6rem;
+            border-bottom: 1px dashed #e5e7eb;
+            font-size: 0.95rem;
+        }
+
+        body.dark .detail-row {
+            border-bottom-color: #374151;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #4b5563;
+        }
+
+        body.dark .detail-label {
+            color: #e5e7eb;
+        }
+
+        .detail-value {
+            text-align: right;
+        }
+
+        .application-status-pill {
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+
+        .application-status-pill.qualified {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .application-status-pill.pending {
+            background-color: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+        }
+
+        .application-status-pill.not-qualified {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        .overlay-section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.6rem;
+        }
+
+        .overlay-muted {
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+
+        body.dark .overlay-muted {
+            color: #9ca3af;
+        }
+
+        @media screen and (max-width: 992px) {
+            .menu-icon {
+                display: flex;
+            }
+
+            .sidebar {
+                transform: translateX(-100%);
+                top: 72px;
+                width: 260px;
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .sidebar.collapsed {
+                width: 260px;
+            }
+
+            .sidebar.collapsed .sidebar-toggle-btn {
+                display: none;
+            }
+
+            .sidebar.collapsed .nav-text,
+            .sidebar.collapsed .applicant-profile,
+            .sidebar.collapsed .profile-info {
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            .sidebar.collapsed:hover {
+                width: 260px;
+            }
+
+            .main-content,
+            .sidebar.collapsed~.main-content {
+                margin-left: 0;
+            }
+        }
+
+        @media screen and (max-width: 576px) {
+            .right {
+                gap: 0.8rem;
+            }
+
+            .user-profile {
+                display: none;
+            }
+
+            .main-content {
+                padding: 1.5rem 1rem;
+            }
+
+            .overlay-dialog {
+                padding: 18px 16px 22px;
+            }
+        }
+
         .modal .btn.btn-dark {
-            background-color: #1E3E62;
-            border-color: #1E3E62;
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
             color: #fff;
         }
 
         .modal .btn.btn-dark:hover,
         .modal .btn.btn-dark:focus {
-            background-color: #163351;
-            /* slightly darker for hover */
-            border-color: #163351;
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
             color: #fff;
         }
 
-        /* Logout Modal Styling */
         #logoutModal .modal-content {
             border-radius: 16px;
             border: none;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
         }
 
-        #logoutModal .modal-header {
-            padding: 1.5rem 1.5rem 1rem;
-        }
-
-        #logoutModal .modal-body {
-            padding: 1rem 1.5rem;
-        }
-
-        #logoutModal .modal-footer {
-            padding: 1rem 1.5rem 1.5rem;
-        }
-
         #logoutModal .modal-title {
-            color: #1E3E62;
+            color: var(--primary-color);
             font-size: 1.3rem;
-        }
-
-        #logoutModal .btn {
-            padding: 0.6rem 1.5rem;
-            border-radius: 8px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        #logoutModal .btn-secondary {
-            background-color: #6c757d;
-            border-color: #6c757d;
-        }
-
-        #logoutModal .btn-secondary:hover {
-            background-color: #5a6268;
-            border-color: #545b62;
-            transform: translateY(-2px);
-        }
-
-        #logoutModal .btn-dark:hover {
-            background-color: #163351;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(30, 62, 98, 0.3);
         }
 
         body.dark #logoutModal .modal-content {
@@ -711,21 +817,193 @@
         }
 
         body.dark #logoutModal .modal-title {
-            color: #79a1b8;
+            color: var(--primary-color);
         }
 
         body.dark #logoutModal .text-muted {
             color: #aaa !important;
         }
 
-        /* Modal Animation */
-        #logoutModal.fade .modal-dialog {
-            transition: transform 0.3s ease-out;
-            transform: scale(0.8);
+
+
+        /* ========= OVERVIEW HERO AREA ========= */
+
+        .overview-header {
+            display: grid;
+            grid-template-columns: minmax(0, 2fr) minmax(260px, 1.2fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            align-items: stretch;
         }
 
-        #logoutModal.show .modal-dialog {
-            transform: scale(1);
+        .overview-left {
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 18px;
+            padding: 1.5rem 1.75rem;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.02);
+        }
+
+        body.dark .overview-left {
+            background: #1e1e1e;
+            border-color: rgba(255, 255, 255, 0.03);
+        }
+
+        .overview-title {
+            font-size: 1.9rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.25rem;
+        }
+
+        .overview-subtitle {
+            font-size: 0.95rem;
+            color: #6b7280;
+        }
+
+        body.dark .overview-subtitle {
+            color: #d1d5db;
+        }
+
+        /* mini metric chips */
+        .overview-metrics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1.25rem;
+        }
+
+        .metric-chip {
+            background: #f3f4f6;
+            border-radius: 12px;
+            padding: 0.65rem 0.9rem;
+            min-width: 150px;
+            border: 1px solid #e5e7eb;
+        }
+
+        body.dark .metric-chip {
+            background: #111827;
+            border-color: #1f2937;
+        }
+
+        .metric-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #6b7280;
+        }
+
+        body.dark .metric-label {
+            color: #9ca3af;
+        }
+
+        .metric-value {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-top: 0.15rem;
+            color: #111827;
+        }
+
+        body.dark .metric-value {
+            color: #f9fafb;
+        }
+
+        /* eligibility badge inside chip */
+        .metric-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.15rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .metric-badge--eligible {
+            background-color: rgba(16, 185, 129, 0.12);
+            color: #059669;
+        }
+
+        .metric-badge--not {
+            background-color: rgba(239, 68, 68, 0.12);
+            color: #dc2626;
+        }
+
+        /* Right side "next step" card */
+        .overview-right {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 18px;
+            padding: 1.4rem 1.6rem;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.02);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        body.dark .overview-right {
+            background: #1e1e1e;
+            border-color: rgba(255, 255, 255, 0.03);
+        }
+
+        .next-step-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #9ca3af;
+            margin-bottom: 0.4rem;
+        }
+
+        .next-step-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+
+        .next-step-desc {
+            font-size: 0.9rem;
+            color: #6b7280;
+            margin-bottom: 1rem;
+        }
+
+        body.dark .next-step-desc {
+            color: #d1d5db;
+        }
+
+        .next-step-meta {
+            font-size: 0.8rem;
+            color: #9ca3af;
+        }
+
+        /* reuse your red button style for the CTA */
+        .next-step-btn {
+            margin-top: 1rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.7rem 1rem;
+            border-radius: 999px;
+            border: none;
+            background-color: var(--primary-color);
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: var(--transition);
+            width: 100%;
+        }
+
+        .next-step-btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-1px);
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .overview-header {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -733,7 +1011,9 @@
 <body>
 
     <header class="topbar">
-        <div class="logo" onclick="window.location.href='/dashboard'">AceView</div>
+        <div class="logo" onclick="window.location.href='/dashboard'">
+            <span>H@</span>
+        </div>
         <div class="right">
             <div class="user-profile">
                 <div class="user-info">
@@ -742,10 +1022,10 @@
                 </div>
             </div>
             <button class="toggle-theme" onclick="toggleTheme()">
-                <span id="theme-icon">🌓</span>
-                <span id="theme-text">Theme</span>
+                <i class='bx bx-moon' id="theme-icon"></i>
+                <span id="theme-text">Dark</span>
             </button>
-            <div class="menu-icon" onclick="toggleSidebar()">
+            <div class="menu-icon" onclick="toggleSidebarMobile()">
                 <div></div>
                 <div></div>
                 <div></div>
@@ -756,13 +1036,14 @@
     <div class="container">
         <!-- Sidebar -->
         <div class="sidebar" id="sidebar">
+            <button class="sidebar-toggle-btn" type="button" onclick="toggleSidebarCollapse()">
+                <i class='bx bx-chevron-left' id="collapse-icon"></i>
+            </button>
+
             <div class="applicant-profile">
                 <div class="profile-header">
-
-                    <div>
-                        <div class="profile-name">{{ username }}</div>
-                        <div class="profile-role">Applicant</div>
-                    </div>
+                    <div class="profile-name">{{ username }}</div>
+                    <div class="profile-role">Applicant</div>
                 </div>
                 <div class="profile-info">
                     <div class="info-item">
@@ -779,28 +1060,32 @@
                     </div>
                 </div>
             </div>
+
             <div class="nav-menu">
                 <a href="/dashboard" class="nav-link active">
-                    Dashboard
+                    <i class='bx bx-grid-alt'></i>
+                    <span class="nav-text">Application Overview</span>
                 </a>
-                <a href="/preapp" class="nav-link">
-                    Pre-screening Result
+                <a href="javascript:void(0)" class="nav-link" onclick="openOverlay('preapp')">
+                    <i class='bx bx-list-check'></i>
+                    <span class="nav-text">Pre-screening Result</span>
                 </a>
-                <a href="/chatapp" class="nav-link">
-                    Chatbot result
+                <a href="javascript:void(0)" class="nav-link" onclick="openOverlay('chatbot')">
+                    <i class='bx bx-brain'></i>
+                    <span class="nav-text">Chatbot Result</span>
                 </a>
-                <a href="/profile" class="nav-link">
-                    Profile
+                <a href="javascript:void(0)" class="nav-link" onclick="openOverlay('profile')">
+                    <i class='bx bx-user-circle'></i>
+                    <span class="nav-text">Profile</span>
                 </a>
                 <div class="submenu-item">
-                    <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#logoutModal">🚪
-                        Logout</a>
+                    <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#logoutModal">
+                        <i class='bx bx-log-out'></i>
+                        <span class="nav-text">Logout</span>
+                    </a>
                 </div>
-
-
             </div>
         </div>
-
 
         <!-- Logout Confirmation Modal -->
         <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
@@ -809,7 +1094,7 @@
                     <div class="modal-header border-0">
                         <h5 class="modal-title fw-bold" id="logoutModalLabel">
                             <i class='bx bx-log-out-circle'
-                                style="color: #1E3E62; font-size: 1.5rem; vertical-align: middle;"></i>
+                                style="color: var(--primary-color); font-size: 1.5rem; vertical-align: middle;"></i>
                             Confirm Logout
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -822,16 +1107,123 @@
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
                             style="min-width: 100px;">Cancel</button>
                         <a href="/logout" class="btn btn-dark"
-                            style="background-color:#1E3E62; border:none; min-width: 100px;">Yes, Logout</a>
+                            style="background-color:var(--primary-color); border:none; min-width: 100px;">Yes,
+                            Logout</a>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- MAIN CONTENT -->
         <div class="main-content">
-            <div class="applicant-header">
-                <h1 class="applicant-heading">Welcome to your dashboard!</h1>
-                <p class="applicant-subtext">Track your application progress and assessments</p>
+            <!-- NEW OVERVIEW HERO -->
+            <div class="overview-header">
+                <!-- Left: title + mini metrics -->
+                <div class="overview-left">
+                    <h1 class="overview-title">Application Overview</h1>
+                    <p class="overview-subtitle">
+                        Track your application progress and interview steps in one place.
+                    </p>
+
+                    <div class="overview-metrics">
+                        <!-- Current Stage -->
+                        <div class="metric-chip">
+                            <div class="metric-label">Current Stage</div>
+                            <div class="metric-value">
+                                {% if chatbot_data %}
+                                Chatbot Interview Completed
+                                {% elif has_applied and application_data.eligibility == 'Eligible' %}
+                                Ready for Chatbot Interview
+                                {% elif has_applied %}
+                                Application Screening
+                                {% else %}
+                                No Application Yet
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- AI Confidence -->
+                        <div class="metric-chip">
+                            <div class="metric-label">AI Confidence Score</div>
+                            <div class="metric-value">
+                                {% if confidence %}
+                                {{ confidence }}%
+                                {% else %}
+                                Not available
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Eligibility -->
+                        <div class="metric-chip">
+                            <div class="metric-label">Eligibility</div>
+                            <div class="metric-value">
+                                {% if has_applied and application_data.eligibility %}
+                                <span class="metric-badge 
+                                {% if application_data.eligibility == 'Eligible' %}
+                                    metric-badge--eligible
+                                {% else %}
+                                    metric-badge--not
+                                {% endif %}">
+                                    {{ application_data.eligibility }}
+                                </span>
+                                {% else %}
+                                <span class="metric-badge metric-badge--not">
+                                    Not evaluated
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Next step card (small like the example) -->
+                <div class="overview-right">
+                    <div>
+                        <div class="next-step-label">Next step</div>
+                        {% if chatbot_data %}
+                        <div class="next-step-title">You’ve completed the chatbot interview</div>
+                        <p class="next-step-desc">
+                            Thank you for completing the interview. HR will review your full profile
+                            and contact you if you are shortlisted for the next round.
+                        </p>
+                        <div class="next-step-meta">
+                            Last interview:
+                            {% if chatbot_data.created_at.__class__.__name__ == 'datetime' %}
+                            {{ chatbot_data.created_at.strftime('%b %d, %Y') }}
+                            {% else %}
+                            {{ chatbot_data.created_at }}
+                            {% endif %}
+                        </div>
+                        {% elif has_applied and application_data.eligibility == 'Eligible' %}
+                        <div class="next-step-title">Proceed to Chatbot Interview</div>
+                        <p class="next-step-desc">
+                            You are eligible to proceed to the chatbot assessment. Complete it to
+                            finish your online interview.
+                        </p>
+                        <a href="/chat" class="next-step-btn">Start Chatbot Interview</a>
+                        {% elif has_applied and application_data.eligibility == 'Not Eligible' %}
+                        <div class="next-step-title">Application in review</div>
+                        <p class="next-step-desc">
+                            You are currently not eligible for the chatbot interview.
+                            You may apply again in the future if new roles open.
+                        </p>
+                        {% elif has_applied %}
+                        <div class="next-step-title">Waiting for screening</div>
+                        <p class="next-step-desc">
+                            Your application is still being reviewed. You’ll see the next action here
+                            once HR has evaluated your details.
+                        </p>
+                        {% else %}
+                        <div class="next-step-title">Start your application</div>
+                        <p class="next-step-desc">
+                            You haven’t submitted an application yet. Begin with the pre-screening form
+                            to check your eligibility.
+                        </p>
+                        <a href="/prescreenn" class="next-step-btn">Begin Pre-screening</a>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
 
             <div class="applicant-grid">
@@ -839,17 +1231,13 @@
                 <div class="card">
                     {% if has_applied %}
                     <div class="status-card">
-                        <h3>Application Status: <span
-                                style="color: {{ 'green' if qualified == 'Qualified' else 'red' }}">{{ qualified
-                                }}</span></h3>
-
                         <div class="reason-box"
-                            style="background: #f8f9fa; padding: 15px; border-left: 4px solid #1E3E62; margin-top: 10px;">
+                            style="background: #f8f9fa; padding: 15px; border-left: 4px solid var(--primary-color); margin-top: 10px;">
                             <strong>HR Remarks:</strong>
                             <p>{{ reason }}</p>
                         </div>
 
-                        <p><strong>AI Confidence Score:</strong> {{ confidence }}%</p>
+                        <p style="margin-top:10px;"><strong>AI Confidence Score:</strong> {{ confidence }}%</p>
                     </div>
                     {% endif %}
                     <div class="card-header">
@@ -862,23 +1250,23 @@
                         </h2>
                         <div class="card-icon">
                             {% if has_applied %}
-                            {% if application_data.qualified == 'Qualified' %}
-                            ✅
-                            {% elif application_data.qualified == 'Not Qualified' %}
-                            ❌
+                            {% if application_data.eligibility == 'Eligible' %}
+                            <i class='bx bx-check-circle'></i>
+                            {% elif application_data.eligibility == 'Not Eligible' %}
+                            <i class='bx bx-x-circle'></i>
                             {% else %}
-                            📋
+                            <i class='bx bx-file'></i>
                             {% endif %}
                             {% else %}
-                            📝
+                            <i class='bx bx-edit-alt'></i>
                             {% endif %}
                         </div>
                     </div>
                     <div class="card-content">
                         {% if has_applied %}
                         <div
-                            class="status-badge {% if application_data.qualified == 'Qualified' %}eligible{% else %}not-eligible{% endif %}">
-                            {{ application_data.qualified }}
+                            class="status-badge {% if application_data.eligibility == 'Eligible' %}eligible{% else %}not-eligible{% endif %}">
+                            {{ application_data.eligibility }}
                         </div>
 
                         <p><strong>Name:</strong> {{ application_data.name }}</p>
@@ -886,7 +1274,6 @@
                         <p><strong>Contact:</strong> {{ application_data.contact }}</p>
                         <p><strong>Position Applied:</strong> {{ application_data.position|replace('_', ' ')|title }}
                         </p>
-                        <p><strong>Eligibility:</strong> {{ application_data.eligibility }}</p>
                         {% if application_data.yearexperience %}
                         <p><strong>Years of Experience:</strong> {{ application_data.yearexperience }}</p>
                         {% endif %}
@@ -900,28 +1287,30 @@
                         </p>
                         {% else %}
                         <div class="empty-state">
-                            <p>You haven't submitted an application yet.</p>
-                            <p>Complete the application form to apply for a position with us!</p>
+                            <p>You have not submitted an application yet.</p>
+                            <p>Complete the application form to apply for a position.</p>
                         </div>
                         {% endif %}
                     </div>
                     {% if has_applied %}
-                    <a href="/dashboard" class="action-button" disable>Apply Now </a>
+                    <a href="/dashboard" class="action-button disabled">Apply Now</a>
                     {% else %}
                     <a href="/prescreenn" class="action-button">Apply Now</a>
                     {% endif %}
                 </div>
+
                 <!-- Chatbot Card -->
                 <div class="card">
                     <div class="card-header">
                         <h2 class="card-title">Chatbot Assessment</h2>
-                        <div class="card-icon">💬</div>
+                        <div class="card-icon">
+                            <i class='bx bx-message-rounded-dots'></i>
+                        </div>
                     </div>
                     <div class="card-content">
                         <div class="chatbot-section">
                             {% if chatbot_data %}
                             <div class="existing-assessment">
-
                                 <div class="result-info">
                                     <p><strong>Position Applied:</strong> {{ chatbot_data.position }}</p>
                                     <p><strong>Date:</strong>
@@ -933,54 +1322,59 @@
                                     </p>
                                     <p><strong>Status:</strong>
                                         <span
-                                            class="result-badge {% if chatbot_data.qualification_status == 'Qualified' %}qualified{% else %}not-qualified{% endif %}">
+                                            class="status-badge {% if chatbot_data.qualification_status == 'Qualified' %}eligible{% else %}not-eligible{% endif %}">
                                             {{ chatbot_data.qualification_status }}
                                         </span>
                                     </p>
                                 </div>
+                            </div>
 
-                            </div>
-                            {% elif has_applied and application_data.qualified == 'Qualified' %}
+                            {% elif has_applied and application_data.eligibility == 'Eligible' %}
                             <div class="chatbot-access success">
-                                <p><span class="status-icon">✅</span> <strong>Congratulations!</strong> You are
-                                    qualified to proceed to the next stage.</p>
-                                <p>Take our career assessment to find the right role for you.</p>
+                                <p>
+                                    <span class="status-text">You are eligible to proceed to the next stage.</span>
+                                </p>
+                                <p>Take the chatbot assessment to complete your interview.</p>
                             </div>
-                            {% elif has_applied and application_data.qualified == 'Not Qualified' %}
+                            {% elif has_applied and application_data.eligibility == 'Not Eligible' %}
                             <div class="chatbot-access restricted">
-                                <p><span class="status-icon">❌</span> You are not eligible for the chatbot interview at
-                                    this time.</p>
+                                <p>
+                                    <span class="status-text">You are not eligible for the chatbot interview at this
+                                        time.</span>
+                                </p>
                                 <p>Please review your application status.</p>
                             </div>
                             {% elif has_applied %}
                             <div class="chatbot-access pending">
-                                <p><span class="status-icon">⏳</span> Your application is still being processed.</p>
+                                <p>
+                                    <span class="status-text">Your application is still being processed.</span>
+                                </p>
                                 <p>Please check back later for chatbot interview eligibility.</p>
                             </div>
                             {% else %}
                             <div class="chatbot-access">
-                                <p> You need to submit an application before taking
-                                    the assessment.</p>
+                                <p>You need to submit an application before taking the assessment.</p>
                             </div>
                             {% endif %}
                         </div>
                     </div>
                     {% if chatbot_data %}
                     <div class="card-footer">
-                        <a href="/dashboard" class="action-button">You have already taken this assesment. Further
-                            attempts are not allowed.</a>
+                        <a href="/dashboard" class="action-button disabled">
+                            You have already taken this assessment.
+                        </a>
                     </div>
-                    {% elif has_applied and application_data.qualified == 'Qualified' %}
+                    {% elif has_applied and application_data.eligibility == 'Eligible' %}
                     <div class="card-footer">
-                        <a href="/chat" class="action-button success-action">Proceed to Chatbot Interview</a>
+                        <a href="/chat" class="action-button">Proceed to Chatbot Interview</a>
                     </div>
-                    {% elif has_applied and application_data.qualified == 'Not Qualified' %}
+                    {% elif has_applied and application_data.eligibility == 'Not Eligible' %}
                     <div class="card-footer">
                         <a href="#" class="action-button disabled">Interview Not Available</a>
                     </div>
                     {% elif has_applied %}
                     <div class="card-footer">
-                        <a href="#" class="action-button pending-action">Pending Qualification</a>
+                        <a href="#" class="action-button disabled">Pending Qualification</a>
                     </div>
                     {% else %}
                     <div class="card-footer">
@@ -988,163 +1382,435 @@
                     </div>
                     {% endif %}
                 </div>
-                <script>
-                    // Update date and time
-                    function updateDateTime() {
-                        const now = new Date();
-                        const options = {
-                            weekday: 'short',
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        };
-                        const dateTime = now.toLocaleDateString('en-US', options);
-                        document.getElementById('datetime').textContent = dateTime;
-                    }
+            </div>
+        </div>
+    </div>
 
-                    // Toggle the submenu visibility
-                    function toggleSettingsMenu() {
-                        const submenu = document.getElementById("settings-submenu");
-                        submenu.style.display = submenu.style.display === "none" ? "block" : "none";
-                    }
-
-                    // Toggle dark/light theme
-                    function toggleTheme() {
-                        document.body.classList.toggle('dark');
-
-                        const themeIcon = document.getElementById('theme-icon');
-                        const themeText = document.getElementById('theme-text');
-
-                        if (document.body.classList.contains('dark')) {
-                            themeIcon.textContent = '☀️';
-                            themeText.textContent = 'Light';
-                            localStorage.setItem('theme', 'dark');
-                        } else {
-                            themeIcon.textContent = '🌙';
-                            themeText.textContent = 'Dark';
-                            localStorage.setItem('theme', 'light');
-                        }
-                    }
-
-                    // Toggle sidebar visibility
-                    function toggleSidebar() {
-                        document.getElementById('sidebar').classList.toggle('show');
-                    }
-
-                    // Check saved theme preference
-                    function loadThemePreference() {
-                        const savedTheme = localStorage.getItem('theme');
-
-                        if (savedTheme === 'dark') {
-                            document.body.classList.add('dark');
-                            document.getElementById('theme-icon').textContent = '☀️';
-                            document.getElementById('theme-text').textContent = 'Light';
-                        } else {
-                            document.getElementById('theme-icon').textContent = '🌙';
-                            document.getElementById('theme-text').textContent = 'Dark';
-                        }
-                    }
-
-                    // Initialize
-                    document.addEventListener('DOMContentLoaded', function () {
-                        updateDateTime();
-                        setInterval(updateDateTime, 30000);
-                        loadThemePreference();
-
-                        // Close sidebar when clicking outside
-                        document.addEventListener('click', function (event) {
-                            const sidebar = document.getElementById('sidebar');
-                            const menuIcon = document.querySelector('.menu-icon');
-
-                            if (sidebar.classList.contains('show') &&
-                                !sidebar.contains(event.target) &&
-                                !menuIcon.contains(event.target)) {
-                                sidebar.classList.remove('show');
-                            }
-                        });
-                    });
-                </script>
-
-
-                <!-- Position Full Modal -->
-                <div class="modal fade" id="positionFullModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content text-center p-4">
-                            <div class="modal-body">
-                                <h5 class="mb-3 fw-bold">This position is no longer available.</h5>
-                                <p class="text-muted">The position you selected from Application Form has reached the
-                                    maximum number of applicants.</p>
-                                <div class="d-flex justify-content-center mt-4 gap-2">
-                                    <a href="" class="btn btn-dark" style="background-color:#1E3E62; border:none;">View
-                                        Other Positions</a>
-                                    <button type="button" class="btn btn-outline-secondary"
-                                        data-bs-dismiss="modal">Cancel</button>
-                                </div>
-                            </div>
+    <!-- PROFILE OVERLAY -->
+    <div class="overlay-modal" id="profileOverlay">
+        <div class="overlay-dialog">
+            <button class="overlay-close" type="button" onclick="closeOverlay('profile')">&times;</button>
+            <div class="overlay-header">
+                <h2 class="overlay-title">Profile</h2>
+                <p class="overlay-subtitle">Your basic information and application overview</p>
+            </div>
+            <div class="overlay-grid">
+                <div>
+                    <div class="profile-photo-block">
+                        <div class="photo-circle" onclick="document.getElementById('overlay-profile-input').click()">
+                            <img src="/static/uploads/{{ profile_photo or 'default.png' }}" alt="Profile photo">
+                        </div>
+                        <form action="/upload_photo" method="POST" enctype="multipart/form-data"
+                            id="overlayProfileForm">
+                            <input type="file" id="overlay-profile-input" name="profile_photo" accept="image/*"
+                                style="display:none" onchange="submitOverlayPhoto(this)">
+                            <button type="button" class="overlay-upload-btn"
+                                onclick="document.getElementById('overlay-profile-input').click()">
+                                <i class='bx bx-upload'></i>
+                                <span>Upload Photo</span>
+                            </button>
+                        </form>
+                    </div>
+                    <div class="detail-list">
+                        <div class="detail-row">
+                            <span class="detail-label">Full name</span>
+                            <span class="detail-value">{{ username or 'Not set' }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Email</span>
+                            <span class="detail-value">{{ email or 'Not set' }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Contact</span>
+                            <span class="detail-value">{{ contact or 'Not set' }}</span>
                         </div>
                     </div>
                 </div>
+                <div>
+                    <div class="overlay-section-title">Application details</div>
+                    <div class="detail-list">
+                        <div class="detail-row">
+                            <span class="detail-label">Position</span>
+                            <span class="detail-value">
+                                {% if application_data and application_data.position %}
+                                {{ application_data.position|replace('_', ' ')|title }}
+                                {% elif chatbot_data and chatbot_data.position %}
+                                {{ chatbot_data.position|replace('_', ' ')|title }}
+                                {% else %}
+                                Not set
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Eligibility</span>
+                            <span class="detail-value">
+                                {% if application_data and application_data.eligibility %}
+                                {{ application_data.eligibility }}
+                                {% else %}
+                                Not set
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Experience</span>
+                            <span class="detail-value">
+                                {% if application_data and application_data.yearexperience %}
+                                {{ application_data.yearexperience }} years
+                                {% else %}
+                                Not set
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Status</span>
+                            <span class="detail-value">
+                                {% if chatbot_data and chatbot_data.qualification_status %}
+                                <span
+                                    class="application-status-pill {% if chatbot_data.qualification_status=='Qualified' %}qualified{% elif chatbot_data.qualification_status=='Not Qualified' %}not-qualified{% else %}pending{% endif %}">
+                                    {{ chatbot_data.qualification_status }}
+                                </span>
+                                {% elif has_applied %}
+                                <span class="application-status-pill pending">Pending</span>
+                                {% else %}
+                                Not set
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <p class="overlay-muted" style="margin-top:1rem;">
+                        Information shown here comes from your pre-screening form and chatbot interview.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                <script>
-                    document.addEventListener('DOMContentLoaded', function () {
-                        {% with messages = get_flashed_messages(with_categories = true) %}
-                        {% for category, message in messages %}
-                        {% if category == 'error' and 'full' in message and 'position' in message %}
-                        var showPositionFullModal = true;
+    <!-- PRE-SCREENING OVERLAY -->
+    <div class="overlay-modal" id="preappOverlay">
+        <div class="overlay-dialog">
+            <button class="overlay-close" type="button" onclick="closeOverlay('preapp')">&times;</button>
+            <div class="overlay-header">
+                <h2 class="overlay-title">Pre-screening Result</h2>
+                <p class="overlay-subtitle">Summary of your application form evaluation</p>
+            </div>
+            {% if has_applied %}
+            <div class="overlay-grid">
+                <div>
+                    <div class="overlay-section-title">Application information</div>
+                    <div class="detail-list">
+                        <div class="detail-row">
+                            <span class="detail-label">Name</span>
+                            <span class="detail-value">{{ application_data.name }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Email</span>
+                            <span class="detail-value">{{ application_data.email }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Contact</span>
+                            <span class="detail-value">{{ application_data.contact }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Position</span>
+                            <span class="detail-value">{{ application_data.position|replace('_',' ')|title }}</span>
+                        </div>
+                        {% if application_data.yearexperience %}
+                        <div class="detail-row">
+                            <span class="detail-label">Experience</span>
+                            <span class="detail-value">{{ application_data.yearexperience }} years</span>
+                        </div>
                         {% endif %}
-                        {% endfor %}
-                        {% endwith %}
+                    </div>
+                </div>
+                <div>
+                    <div class="overlay-section-title">Eligibility decision</div>
+                    <div class="detail-list">
+                        <div class="detail-row">
+                            <span class="detail-label">Eligibility</span>
+                            <span class="detail-value">
+                                <span
+                                    class="application-status-pill {% if application_data.eligibility=='Eligible' %}qualified{% elif application_data.eligibility=='Not Eligible' %}not-qualified{% else %}pending{% endif %}">
+                                    {{ application_data.eligibility }}
+                                </span>
+                            </span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">AI confidence</span>
+                            <span class="detail-value">
+                                {% if confidence is not none %}
+                                {{ confidence }} %
+                                {% else %}
+                                Not available
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Review status</span>
+                            <span class="detail-value">
+                                {% if application_data.status == 1 %}
+                                Reviewed
+                                {% else %}
+                                Pending
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div style="margin-top:1rem; background:#f9fafb; padding:12px 14px; border-radius:10px;">
+                        <div style="font-weight:600; margin-bottom:4px;">HR remarks</div>
+                        <p class="overlay-muted" style="margin-bottom:0;">
+                            {% if reason %}
+                            {{ reason }}
+                            {% else %}
+                            No remarks recorded yet.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <p class="overlay-muted">You have not submitted a pre-screening application yet.</p>
+            {% endif %}
+        </div>
+    </div>
 
-                        if (typeof showPositionFullModal !== 'undefined' && showPositionFullModal) {
-                            var positionFullModal = new bootstrap.Modal(document.getElementById('positionFullModal'));
-                            positionFullModal.show();
-                        }
-                    });
-                </script>
+    <!-- CHATBOT RESULT OVERLAY -->
+    <div class="overlay-modal" id="chatbotOverlay">
+        <div class="overlay-dialog">
+            <button class="overlay-close" type="button" onclick="closeOverlay('chatbot')">&times;</button>
+            <div class="overlay-header">
+                <h2 class="overlay-title">Chatbot Result</h2>
+                <p class="overlay-subtitle">Outcome of your chatbot-based interview</p>
+            </div>
+            {% if chatbot_data %}
+            <div class="overlay-grid">
+                <div>
+                    <div class="overlay-section-title">Interview summary</div>
+                    <div class="detail-list">
+                        <div class="detail-row">
+                            <span class="detail-label">Position</span>
+                            <span class="detail-value">{{ chatbot_data.position|replace('_',' ')|title }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Date</span>
+                            <span class="detail-value">
+                                {% if chatbot_data.created_at.__class__.__name__ == 'datetime' %}
+                                {{ chatbot_data.created_at.strftime('%B %d, %Y') }}
+                                {% else %}
+                                {{ chatbot_data.created_at }}
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Qualification</span>
+                            <span class="detail-value">
+                                <span
+                                    class="application-status-pill {% if chatbot_data.qualification_status=='Qualified' %}qualified{% elif chatbot_data.qualification_status=='Not Qualified' %}not-qualified{% else %}pending{% endif %}">
+                                    {{ chatbot_data.qualification_status }}
+                                </span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="overlay-section-title">Notes</div>
+                    <p class="overlay-muted">
+                        This result is based on your interaction with the chatbot and the model's scoring of your
+                        answers.
+                        HR may still review this result together with your pre-screening form.
+                    </p>
+                    {% if chatbot_data.overall_score is defined %}
+                    <p style="margin-top:0.75rem;">
+                        <strong>Overall score:</strong> {{ chatbot_data.overall_score }}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <p class="overlay-muted">You do not have a chatbot interview result yet.</p>
+            {% endif %}
+        </div>
+    </div>
 
-                <script>
-                    // Prevent back button after logout
-                    (function (global) {
-                        if (typeof (global) === "undefined") {
-                            throw new Error("window is undefined");
-                        }
+    <script>
+        function updateDateTime() {
+            const now = new Date();
+            const options = {
+                weekday: 'short',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            document.getElementById('datetime').textContent = now.toLocaleDateString('en-US', options);
+        }
 
-                        var _hash = "!";
-                        var noBackPlease = function () {
-                            global.location.href += "#";
-                            global.setTimeout(function () {
-                                global.location.href += "!";
-                            }, 50);
-                        };
+        function toggleTheme() {
+            document.body.classList.toggle('dark');
+            const themeIcon = document.getElementById('theme-icon');
+            const themeText = document.getElementById('theme-text');
 
-                        global.onhashchange = function () {
-                            if (global.location.hash !== _hash) {
-                                global.location.hash = _hash;
-                            }
-                        };
+            if (document.body.classList.contains('dark')) {
+                themeIcon.classList.remove('bx-moon');
+                themeIcon.classList.add('bx-sun');
+                themeText.textContent = 'Light';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                themeIcon.classList.remove('bx-sun');
+                themeIcon.classList.add('bx-moon');
+                themeText.textContent = 'Dark';
+                localStorage.setItem('theme', 'light');
+            }
+        }
 
-                        global.onload = function () {
-                            noBackPlease();
+        function toggleSidebarCollapse() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('collapsed');
+        }
 
-                            // Clear browser history
-                            global.history.pushState(null, "", global.location.href);
-                            global.onpopstate = function () {
-                                global.history.pushState(null, "", global.location.href);
-                            };
-                        };
-                    })(window);
+        function toggleSidebarMobile() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('show');
+        }
 
-                    // Additional protection - redirect if session expired
-                    window.addEventListener('pageshow', function (event) {
-                        if (event.persisted) {
-                            window.location.reload();
-                        }
-                    });
-                </script>
+        function loadThemePreference() {
+            const savedTheme = localStorage.getItem('theme');
+            const themeIcon = document.getElementById('theme-icon');
+            const themeText = document.getElementById('theme-text');
 
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark');
+                themeIcon.classList.remove('bx-moon');
+                themeIcon.classList.add('bx-sun');
+                themeText.textContent = 'Light';
+            } else {
+                document.body.classList.remove('dark');
+                themeIcon.classList.remove('bx-sun');
+                themeIcon.classList.add('bx-moon');
+                themeText.textContent = 'Dark';
+            }
+        }
 
+        // OVERLAY HELPERS
+        function openOverlay(type) {
+            const ids = {
+                profile: 'profileOverlay',
+                preapp: 'preappOverlay',
+                chatbot: 'chatbotOverlay'
+            };
+            Object.values(ids).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.remove('show');
+            });
+            const target = document.getElementById(ids[type]);
+            if (target) {
+                target.classList.add('show');
+                document.body.classList.add('overlay-open');
+            }
+        }
+
+        function closeOverlay(type) {
+            const ids = {
+                profile: 'profileOverlay',
+                preapp: 'preappOverlay',
+                chatbot: 'chatbotOverlay'
+            };
+            const target = document.getElementById(ids[type]);
+            if (target) {
+                target.classList.remove('show');
+            }
+            // if none is open, remove lock
+            const anyOpen = Object.values(ids).some(id => {
+                const el = document.getElementById(id);
+                return el && el.classList.contains('show');
+            });
+            if (!anyOpen) {
+                document.body.classList.remove('overlay-open');
+            }
+        }
+
+        // close on background click
+        document.addEventListener('click', function (e) {
+            document.querySelectorAll('.overlay-modal').forEach(modal => {
+                if (modal.classList.contains('show') && e.target === modal) {
+                    modal.classList.remove('show');
+                    document.body.classList.remove('overlay-open');
+                }
+            });
+        });
+
+        // close on ESC
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.overlay-modal').forEach(modal => modal.classList.remove('show'));
+                document.body.classList.remove('overlay-open');
+            }
+        });
+
+        // profile photo submit inside overlay
+        function submitOverlayPhoto(input) {
+            if (input.files && input.files[0]) {
+                document.getElementById('overlayProfileForm').submit();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            updateDateTime();
+            setInterval(updateDateTime, 30000);
+            loadThemePreference();
+
+            // close mobile sidebar when clicking outside
+            document.addEventListener('click', function (event) {
+                const sidebar = document.getElementById('sidebar');
+                const menuIcon = document.querySelector('.menu-icon');
+
+                if (window.innerWidth <= 992 &&
+                    sidebar.classList.contains('show') &&
+                    !sidebar.contains(event.target) &&
+                    !menuIcon.contains(event.target)) {
+                    sidebar.classList.remove('show');
+                }
+            });
+        });
+    </script>
+
+    <script>
+        // Prevent back button after logout
+        (function (global) {
+            if (typeof (global) === "undefined") {
+                throw new Error("window is undefined");
+            }
+
+            var _hash = "!";
+            var noBackPlease = function () {
+                global.location.href += "#";
+                global.setTimeout(function () {
+                    global.location.href += "!";
+                }, 50);
+            };
+
+            global.onhashchange = function () {
+                if (global.location.hash !== _hash) {
+                    global.location.hash = _hash;
+                }
+            };
+
+            global.onload = function () {
+                noBackPlease();
+
+                global.history.pushState(null, "", global.location.href);
+                global.onpopstate = function () {
+                    global.history.pushState(null, "", global.location.href);
+                };
+            };
+        })(window);
+
+        window.addEventListener('pageshow', function (event) {
+            if (event.persisted) {
+                window.location.reload();
+            }
+        });
+    </script>
 
 </body>
 

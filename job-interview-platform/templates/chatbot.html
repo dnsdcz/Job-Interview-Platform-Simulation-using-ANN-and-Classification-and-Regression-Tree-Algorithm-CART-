@@ -5,127 +5,530 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Technical Interview Chatbot</title>
+
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f0f2f5;
+    :root {
+      --primary-red: #B2271B;
+      --primary-red-dark: #921E15;
+      --bg-deep: #2b0504;
+      --bg-soft: #fff7f4;
+      --chip-bg: #fde4df;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --border-soft: #f4d2c8;
+    }
+
+    * {
+      box-sizing: border-box;
       margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Poppins", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+
+      font-family: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+      background:
+        radial-gradient(circle at 80% 40%, rgba(255, 255, 255, 0.80), rgba(255, 255, 255, 0) 45%),
+        radial-gradient(circle at 80% 65%, #B2271B 0%, rgba(178, 39, 27, 0.55) 55%, rgba(178, 39, 27, 0) 90%),
+        radial-gradient(circle at 25% 70%, #921E15 0%, rgba(146, 30, 21, 0.45) 60%, rgba(146, 30, 21, 0) 90%),
+        radial-gradient(circle at 15% 25%, #4B0E0A 0%, rgba(75, 14, 10, 0.55) 60%, rgba(75, 14, 10, 0) 90%),
+        linear-gradient(135deg, #4B0E0A, #921E15, #B2271B);
+
+      background-blend-mode: screen, overlay, soft-light, normal;
+      background-attachment: fixed;
+      overflow: hidden;
     }
 
     .container {
-      max-width: 900px;
-      margin: 30px auto;
-      padding: 20px;
+      width: 100%;
+      max-width: 1240px;
+      min-height: 620px;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(18px);
+      border-radius: 28px;
+      box-shadow:
+        0 32px 80px rgba(0, 0, 0, 0.45),
+        0 0 0 1px rgba(255, 255, 255, 0.35);
+      padding: 18px 22px 22px;
+      display: flex;
+      flex-direction: column;
+      color: var(--text-main);
     }
 
-    .chatbot-header {
-      background-color: #001f4d;
-      color: white;
-      padding: 20px;
-      border-radius: 12px 12px 0 0;
+    .topbar {
       display: flex;
       align-items: center;
-      gap: 15px;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      gap: 10px;
     }
 
-    .chatbot-header img {
-      width: 50px;
-      height: 50px;
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      background: #ffffff;
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+      font-size: 13px;
+      cursor: pointer;
+      text-decoration: none;
+      color: #111827;
     }
 
-    .chatbot-header h2 {
-      margin: 0;
-      font-size: 1.8em;
+    .back-btn i {
+      font-size: 14px;
     }
 
-    .user-info {
-      background-color: white;
-      border: 1px solid #cce4f7;
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 20px;
-      color: #001f4d;
+    .brand-area {
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
-    .info-row {
-      margin: 8px 0;
+    .brand-text {
+      display: flex;
+      flex-direction: column;
     }
 
-    .info-label {
-      font-weight: bold;
+    .brand-title {
+      font-size: 15px;
+      font-weight: 600;
     }
 
-    .chat-area {
-      background-color: white;
-      border-radius: 8px;
-      border: 1px solid #ddd;
-      padding: 20px;
+    .brand-sub {
+      font-size: 11px;
+      color: var(--text-muted);
     }
 
-    .chat-content {
-      height: 350px;
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .pill-label {
+      background: #f3f4f6;
+      border-radius: 999px;
+      padding: 4px 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: #22c55e;
+    }
+
+    .header-pill-btn {
+      padding: 6px 13px;
+      border-radius: 999px;
+      background: #ffffff;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      font-size: 11px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #111827;
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+    }
+
+    .header-pill-btn i {
+      font-size: 13px;
+      color: #f97316;
+    }
+
+    .chat-shell {
+      flex: 1;
+      border-radius: 22px;
+      background: radial-gradient(circle at top, #fffdfa, #fff3ee);
+      border: 1px solid #fee2e2;
+      box-shadow:
+        0 18px 45px rgba(0, 0, 0, 0.16),
+        0 0 0 1px rgba(255, 255, 255, 0.7);
+      padding: 18px 22px 20px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .shell-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 12px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .interview-title-block {
+      text-align: center;
+      flex: 1;
+    }
+
+    .bot-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 20%, #60a5fa, #1e3a8a);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 26px;
+      margin: 0 auto 4px;
+      box-shadow: 0 10px 25px rgba(30, 64, 175, 0.55);
+    }
+
+    .interview-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .interview-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 2px 0 3px;
+    }
+
+    .interview-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .candidate-pill {
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 4px 10px rgba(148, 163, 184, 0.3);
+      white-space: nowrap;
+    }
+
+    .chat-window {
+      margin-top: 12px;
+      flex: 1;
+      border-radius: 18px;
+      background: #fdf7f6;
+      border: 1px solid #f5d3c8;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-welcome {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 2;
+      background: linear-gradient(180deg,
+          rgba(255, 255, 255, 0.95),
+          rgba(255, 247, 244, 0.98));
+    }
+
+    .welcome-card {
+      max-width: 520px;
+      width: 100%;
+      text-align: center;
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 22px 20px 18px;
+      box-shadow:
+        0 20px 45px rgba(148, 27, 20, 0.35),
+        0 0 0 1px rgba(248, 250, 252, 0.9);
+      border: 1px solid rgba(254, 202, 202, 0.9);
+    }
+
+    .welcome-hello {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .welcome-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .welcome-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .welcome-desc span {
+      font-weight: 600;
+      color: var(--primary-red-dark);
+    }
+
+    .welcome-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      border: none;
+      padding: 9px 16px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--primary-red), var(--primary-red-dark));
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 12px 25px rgba(146, 30, 21, 0.55);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary i {
+      font-size: 13px;
+    }
+
+    .btn-ghost {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      padding: 8px 15px;
+      background: #ffffff;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #111827;
+    }
+
+    .btn-ghost i {
+      color: #f97316;
+    }
+
+    .welcome-note {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .welcome-note span {
+      font-weight: 600;
+      color: #B2271B;
+    }
+
+    #chat-content {
+      flex: 1;
+      padding: 14px 14px 10px;
       overflow-y: auto;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      padding: 10px;
-      background-color: #fafafa;
-      margin-bottom: 15px;
+      font-size: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
     .message {
-      margin-bottom: 10px;
-      padding: 10px;
-      border-radius: 8px;
-      max-width: 75%;
+      max-width: 78%;
+      padding: 9px 11px;
+      border-radius: 14px;
+      line-height: 1.45;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
     }
 
     .bot {
-      background-color: #d9e6f2;
-      color: #001f4d;
       align-self: flex-start;
+      background: #eff3ff;
+      border-radius: 12px 14px 14px 4px;
+      color: #111827;
     }
 
     .user {
-      background-color: #cce0ff;
-      text-align: right;
       align-self: flex-end;
-      color: #001f4d;
+      background: #fee2e2;
+      border-radius: 14px 4px 12px 14px;
+      color: #7f1d1d;
+    }
+
+    .input-row {
+      padding: 10px 12px 8px;
+      border-top: 1px solid rgba(254, 202, 202, 0.8);
+      background: rgba(255, 255, 255, 0.85);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .input-hint {
+      font-size: 11px;
+      color: var(--text-muted);
     }
 
     .input-area {
       display: flex;
+      align-items: center;
       gap: 10px;
     }
 
-    input[type="text"] {
+    #answer-input {
       flex: 1;
-      padding: 10px;
-      border-radius: 4px;
-      border: 1px solid #001f4d;
-      color: #001f4d;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border-soft);
+      background: #fffafa;
+      font-size: 14px;
+      outline: none;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.9);
     }
 
-    button {
-      padding: 10px 15px;
+    #answer-input:focus {
+      border-color: var(--primary-red);
+      box-shadow:
+        0 0 0 3px rgba(248, 113, 113, 0.25),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.9);
+    }
+
+    .send-btn {
       border: none;
-      border-radius: 4px;
-      background-color: #001f4d;
-      color: white;
+      border-radius: 999px;
+      padding: 9px 16px;
+      background: linear-gradient(135deg, var(--primary-red), var(--primary-red-dark));
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       cursor: pointer;
+      box-shadow: 0 10px 22px rgba(148, 27, 20, 0.5);
     }
 
-    button:disabled {
-      background-color: #a0a0a0;
+    .send-btn i {
+      font-size: 13px;
+    }
+
+    .send-btn:disabled {
+      opacity: 0.5;
       cursor: not-allowed;
+      box-shadow: none;
     }
 
-    #save-container,
-    #summary-link,
-    #final-result {
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
       display: none;
-      margin-top: 20px;
-      color: #001f4d;
+      align-items: center;
+      justify-content: center;
+      z-index: 40;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal {
+      max-width: 520px;
+      width: 100%;
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 18px 20px 16px;
+      box-shadow: 0 24px 65px rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(254, 202, 202, 0.95);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .modal-header h3 {
+      font-size: 17px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-header h3 i {
+      color: #f97316;
+    }
+
+    .modal-close {
+      border: none;
+      background: #fee2e2;
+      border-radius: 999px;
+      width: 26px;
+      height: 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #7f1d1d;
+      font-size: 13px;
+    }
+
+    .modal-body {
+      font-size: 13px;
+      color: #374151;
+    }
+
+    .modal-body p {
+      margin-bottom: 8px;
+    }
+
+    .modal-body ul {
+      margin-left: 18px;
+      margin-top: 4px;
+      margin-bottom: 10px;
+    }
+
+    .modal-body li {
+      margin-bottom: 4px;
+    }
+
+    .modal-footnote {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 6px;
+    }
+
+    @media (max-width: 900px) {
+      .container {
+        padding: 14px;
+      }
+
+      .chat-shell {
+        padding: 14px;
+      }
+
+      .interview-title {
+        font-size: 18px;
+      }
     }
   </style>
 </head>
@@ -133,56 +536,217 @@
 <body>
   <div class="container">
 
-    <!-- Header -->
-    <div class="chatbot-header">
-      <img src="{{ url_for('static', filename='icon.png') }}" alt="Chatbot Icon" />
-      <h2>AceView</h2>
-      {% if name %}
-      <p class="user-welcome">Welcome, {{ name }}!</p>
-      {% endif %}
-    </div>
+    <div class="topbar">
+      <a href="/dashboard" class="back-btn">
+        <i class="fa-solid fa-arrow-left"></i>
+        Dashboard
+      </a>
 
-    <!-- Applicant Info -->
-    <div class="user-info">
-      <div class="info-row"><span class="info-label">Name:</span> {{ name }}</div>
-      <div class="info-row"><span class="info-label">Experience:</span> {{ experience }} years</div>
-      <div class="info-row"><span class="info-label">Position:</span> {{ position }}</div>
-      <input type="hidden" id="user_id" value="{{ user_id }}" />
-    </div>
+      <div class="brand-area">
+        <div class="brand-text">
+          <span class="brand-title">Chat Interview</span>
+          <span class="brand-sub">AI-powered mock interview</span>
+        </div>
+      </div>
 
-    <!-- 🔥 RESUME SECTION REMOVED -->
-
-    <!-- Chat Section -->
-    <div class="chat-area">
-      <div class="chat-content" id="chat-content"></div>
-      <div class="input-area">
-        <input type="text" id="answer-input" placeholder="Type your answer here..." disabled />
-        <button id="submit-btn" onclick="submitAnswer()" disabled>Submit</button>
+      <div class="topbar-right">
+        <div class="pill-label">
+          <span class="pill-dot"></span>
+          <span>Mock interview · Practice only</span>
+        </div>
+        <button type="button" class="header-pill-btn" id="openGuidelinesHeader">
+          <i class="fa-regular fa-circle-question"></i>
+          Interview guidelines
+        </button>
       </div>
     </div>
 
-    <div id="final-result"></div>
+    <div class="chat-shell">
+      <div class="shell-header"></div>
 
-    <div id="save-container">
-      <button id="save" onclick="saveInterviewSummary()" disabled>Save Result</button>
-      <button id="view-summary">View Summary</button>
+      <div class="candidate-pill">
+        Name: {{ name }} · Position: {{ position }} · Experience: {{ experience }} year(s)
+      </div>
+
+      <div class="chat-window">
+        <div class="chat-welcome" id="chatWelcome">
+          <div class="welcome-card">
+            <p class="welcome-hello">Hi {{ name }}, 👋</p>
+            <p class="welcome-title">Get started with your mock interview</p>
+            <p class="welcome-desc">
+              Questions will appear <span>one by one</span> based on your
+              role and experience. Once you move to the next question, you
+              won’t be able to edit previous answers.
+            </p>
+
+            <div class="welcome-buttons">
+              <button type="button" class="btn-primary" id="startInterviewBtn">
+                <i class="fa-solid fa-play"></i>
+                Start interview
+              </button>
+            </div>
+
+            <p class="welcome-note">
+              <span>Caution:</span> This chatbot is for Job mock Interview. Treat each
+              question seriously, answer in your own words, and avoid sharing
+              sensitive or confidential information.
+            </p>
+          </div>
+        </div>
+
+        <div id="chat-content"></div>
+
+        <div class="input-row">
+          <div class="input-hint">
+            Waiting for you to start the interview…
+          </div>
+          <div class="input-area">
+            <input type="text" id="answer-input" placeholder="Type your answer here..." disabled />
+            <button id="submit-btn" class="send-btn" onclick="submitAnswer()" disabled>
+              Send
+              <i class="fa-solid fa-paper-plane"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="final-result" style="display:none;"></div>
+      <div id="save-container" style="display:none; margin-top:10px;">
+        <button id="save" disabled>Save Result</button>
+        <button id="view-summary">View Summary</button>
+      </div>
+      <div id="summary-link" style="display:none; margin-top:10px;">
+        <button id="generate-pdf">Generate PDF</button>
+        <button id="download-summary">Download .docx</button>
+      </div>
+
+      <!-- hidden fields for JS -->
+      <input type="hidden" id="user_id" value="{{ user_id }}" />
+      <input type="hidden" id="input-status" />
+      <input type="hidden" id="input-advice" />
+      <input type="hidden" id="input-assessment" />
+      <input type="hidden" id="input-confidence" />
+      <input type="hidden" id="input-score" />
+      <input type="hidden" id="candidate-name" value="{{ name }}">
+      <input type="hidden" id="candidate-position" value="{{ position }}">
+      <input type="hidden" id="candidate-experience" value="{{ experience }}">
     </div>
+  </div>
 
-    <div id="summary-link">
-      <button id="generate-pdf">Generate PDF</button>
-      <button id="download-summary">Download .docx</button>
+  <!-- Guidelines modal -->
+  <div class="modal-backdrop" id="guidelinesModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>
+          <i class="fa-regular fa-circle-question"></i>
+          Interview guidelines
+        </h3>
+        <button class="modal-close" id="closeGuidelines">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>
+          This chatbot simulates a <strong>technical interview</strong> to help
+          you practice. It does <strong>not</strong> make hiring decisions.
+        </p>
+        <ul>
+          <li>Read each question carefully before answering.</li>
+          <li>Answer in your own words as if you were in a real interview.</li>
+          <li>Focus on clear, structured explanations and real experience.</li>
+          <li>Avoid sharing confidential information about previous employers or projects.</li>
+          <li>Once you move to the next question, your previous answer is locked.</li>
+        </ul>
+        <p class="modal-footnote">
+          By continuing, you agree that your answers are for <strong>practice
+            and evaluation</strong> only and won’t be used as an official hiring
+          decision.
+        </p>
+      </div>
     </div>
+  </div>
 
-    <!-- Hidden fields used for backend summary -->
-    <input type="hidden" id="input-status" />
-    <input type="hidden" id="input-advice" />
-    <input type="hidden" id="input-assessment" />
-    <input type="hidden" id="input-confidence" />
-    <input type="hidden" id="input-score" />
+  <!-- Result modal (no X close) -->
+  <div class="modal-backdrop" id="resultModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="resultTitle">
+          <i class="fa-regular fa-circle-check"></i>
+          Interview result
+        </h3>
+      </div>
+      <div class="modal-body">
+        <p id="resultStatusText"><strong>Status:</strong> —</p>
+        <p id="resultPercentageText"><strong>Match score:</strong> —</p>
+        <p id="resultSuggestionText" style="margin-top: 8px;"></p>
 
+        <div style="margin-top: 14px; display:flex; gap:8px; flex-wrap:wrap;">
+          <button type="button" class="btn-primary" id="resultViewSummary">
+            <i class="fa-regular fa-file-lines"></i>
+            View summary report
+          </button>
+          <button type="button" class="btn-ghost" id="resultDoneBtn" data-redirect-url="/dashboard">
+            Done – back to overview
+          </button>
+        </div>
+
+        <p class="modal-footnote" style="margin-top:10px;">
+          You can review your detailed scores and advice in the summary report.
+        </p>
+      </div>
+    </div>
   </div>
 
   <script src="/static/chatbot.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const startBtn = document.getElementById('startInterviewBtn');
+      const welcome = document.getElementById('chatWelcome');
+      const answerInput = document.getElementById('answer-input');
+      const submitBtn = document.getElementById('submit-btn');
+      const inputHint = document.querySelector('.input-hint');
+
+      function startInterviewUI() {
+        if (welcome) welcome.style.display = 'none';
+        if (answerInput) {
+          answerInput.disabled = false;
+          answerInput.focus();
+        }
+        if (submitBtn) submitBtn.disabled = false;
+        if (inputHint) {
+          inputHint.textContent = 'Interview in progress… answer carefully before sending.';
+        }
+
+        if (typeof window.startInterview === 'function') {
+          window.startInterview();
+        }
+      }
+
+      if (startBtn) {
+        startBtn.addEventListener('click', startInterviewUI);
+      }
+
+      // guidelines modal
+      const modal = document.getElementById('guidelinesModal');
+      const openHeader = document.getElementById('openGuidelinesHeader');
+      const closeBtn = document.getElementById('closeGuidelines');
+
+      function openModal() {
+        if (modal) modal.classList.add('show');
+      }
+
+      function closeModal() {
+        if (modal) modal.classList.remove('show');
+      }
+
+      if (openHeader) openHeader.addEventListener('click', openModal);
+      if (closeBtn) closeBtn.addEventListener('click', closeModal);
+      if (modal) {
+        modal.addEventListener('click', function (e) {
+          if (e.target === modal) closeModal();
+        });
+      }
+    });
+  </script>
 </body>
 
 </html>

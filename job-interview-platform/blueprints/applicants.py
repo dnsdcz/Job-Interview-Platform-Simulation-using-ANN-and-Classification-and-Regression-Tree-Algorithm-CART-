@@ -1,5 +1,7 @@
 # blueprints/applicants.py
+
 from datetime import datetime
+from urllib.parse import unquote
 
 import numpy as np
 
@@ -17,11 +19,13 @@ from flask import (
 from werkzeug.utils import secure_filename
 
 from extensions import mysql, logger
+from services.email_service import send_step1_completed_email  # ⬅️ NEW IMPORT
 
 # CART (Decision Tree)
 from sklearn.tree import DecisionTreeClassifier
 
 applicants_bp = Blueprint("applicants", __name__)
+
 
 # ---------- CART (Decision Tree) MODEL FOR PRESCREEN & APPLICATION ----------
 
@@ -151,6 +155,13 @@ def dashboard():
     row = cur.fetchone()
     applicant = None
     if row:
+        # applicants table layout:
+        # 0 id, 1 user_id, 2 name, 3 email, 4 contact, 5 position,
+        # 6 eligibility, 7 yearexperience, 8 Level, 9 status,
+        # 10 confidence, 11 address, 12 start_date, 13 desired_pay,
+        # 14 employment_type, 15 school, 16 school_location,
+        # 17 years_attended, 18 education_level, 19 degree,
+        # 20 major, 21 job_title, 22 company, 23 responsibilities, 24 skills
         applicant = {
             "id": row[0],
             "user_id": row[1],
@@ -162,8 +173,21 @@ def dashboard():
             "yearexperience": row[7],
             "level": row[8],
             "status": row[9],
-            "qualified": row[10],
-            "confidence": row[11],
+            "confidence": row[10],
+            "address": row[11],
+            "start_date": row[12],
+            "desired_pay": row[13],
+            "employment_type": row[14],
+            "school": row[15],
+            "school_location": row[16],
+            "years_attended": row[17],
+            "education_level": row[18],
+            "degree": row[19],
+            "major": row[20],
+            "job_title": row[21],
+            "company": row[22],
+            "responsibilities": row[23],
+            "skills": row[24],
         }
         # ensure interview uses same values
         session["position"] = row[5]
@@ -197,7 +221,8 @@ def dashboard():
     reason = session.get("reason")
     confidence = session.get("confidence")
     position = session.get("position")
-    qualification_status = session.get("qualification_status", "")
+    qualification_status = session.get(
+        "qualification_status", "")  # from chatbot only
     applied_role = position or "Business Analyst"
 
     cur.close()
@@ -268,13 +293,15 @@ def submit_application():
             return redirect(url_for("applicants.dashboard"))
 
         # --- 3. FETCH HR REQUIREMENTS ---
-        # We need these to know WHY they failed (e.g. Min Age, Min Exp)
-        cur.execute("""
+        cur.execute(
+            """
             SELECT max_allowed, form_access, opening_date, deadline_date, 
                    min_age, experience_years
             FROM position_limits 
             WHERE position = %s
-        """, (position,))
+            """,
+            (position,),
+        )
 
         limits = cur.fetchone()
 
@@ -290,14 +317,17 @@ def submit_application():
                 req_exp = db_min_exp
 
             # Check Basic Limits (Closed/Full)
-            if form_access == 'Closed':
+            if form_access == "Closed":
                 flash("Applications are closed.", "error")
+                cur.close()
                 return redirect(url_for("applicants.dashboard"))
 
             cur.execute(
-                "SELECT COUNT(*) FROM applicants WHERE position = %s", (position,))
+                "SELECT COUNT(*) FROM applicants WHERE position = %s", (position,)
+            )
             if cur.fetchone()[0] >= max_allowed:
                 flash("Position is full.", "error")
+                cur.close()
                 return redirect(url_for("applicants.dashboard"))
 
         # --- 4. CALCULATE SPECIFIC REASON FOR REJECTION ---
@@ -306,18 +336,21 @@ def submit_application():
         # Rule 1: Age
         if age < req_age:
             rejection_reasons.append(
-                f"Age ({age}) is below the minimum requirement of {req_age}")
+                f"Age ({age}) is below the minimum requirement of {req_age}"
+            )
 
         # Rule 2: Experience
         if experience < req_exp:
             rejection_reasons.append(
-                f"Experience ({experience} yrs) is below the required {req_exp} yrs")
+                f"Experience ({experience} yrs) is below the required {req_exp} yrs"
+            )
 
         # Rule 3: Skills Count (Basic check)
         skills_list = [s.strip() for s in skills.split(",") if s.strip()]
         if len(skills_list) < 2:
             rejection_reasons.append(
-                "Insufficient skills listed (minimum 2 required)")
+                "Insufficient skills listed (minimum 2 required)"
+            )
 
         # Rule 4: AI Score (Soft Check) - USING DECISION TREE (CART)
         try:
@@ -327,8 +360,8 @@ def submit_application():
                 experience=experience,
                 skills_raw=skills,
             )
-            model_score = cart_result["model_score"]           # 0–1
-            confidence = cart_result["probability_percent"]    # 0–100
+            model_score = cart_result["model_score"]  # 0–1
+            confidence = cart_result["probability_percent"]  # 0–100
             session["cart_details"] = cart_result
         except Exception as e:
             logger.error(f"CART prediction error: {e}")
@@ -337,70 +370,97 @@ def submit_application():
 
         # If they passed hard rules, check AI score
         if not rejection_reasons:
-            if model_score < 0.55:  # Threshold (still valid, 0–1 scale)
+            if model_score < 0.55:
                 rejection_reasons.append(
-                    "Assessment score below qualification threshold")
+                    "Assessment score below qualification threshold"
+                )
 
-        # --- 5. DETERMINE FINAL STATUS ---
+        # --- 5. DETERMINE FINAL STATUS (ELIGIBLE / NOT ELIGIBLE ONLY) ---
         if not rejection_reasons:
             eligibility = "Eligible"
-            qualified_status = "Qualified"
             final_reason = "You meet all requirements for this position."
         else:
             eligibility = "Not Eligible"
-            qualified_status = "Not Qualified"
-            # Combine all reasons into one string
-            final_reason = "Not Qualified: " + "; ".join(rejection_reasons)
+            final_reason = "Not Eligible: " + "; ".join(rejection_reasons)
 
-        status = "Pending"
+        # We'll use the numeric "status" field for application state
+        # e.g. 0 = Pending, 1 = Approved, 2 = Denied
+        status = 0  # Pending by default
 
-        # --- 6. INSERT INTO DATABASE ---
+        # Level is required (NOT NULL) in your table, so give it something
+        level_value = "N/A"
+
+        # confidence in DB is int, but our model gives float 0–100
+        confidence_int = int(round(confidence))
+
+        # --- 6. INSERT INTO DATABASE (NO QUALIFIED COLUMN) ---
         query = """
             INSERT INTO applicants
-            (user_id, name, email, contact, position, 
+            (user_id, name, email, contact, position,
+             eligibility, yearexperience, Level, status, confidence,
              address, start_date, desired_pay, employment_type,
-             school, school_location, years_attended, education_level, degree, major,
-             job_title, company, yearexperience, responsibilities, skills,
-             eligibility, status, qualified, confidence)
-            VALUES 
-            (%s, %s, %s, %s, %s, 
-             %s, %s, %s, %s, 
-             %s, %s, %s, %s, %s, %s, 
-             %s, %s, %s, %s, %s, 
-             %s, %s, %s, %s)
+             school, school_location, years_attended, education_level,
+             degree, major, job_title, company, responsibilities, skills)
+            VALUES
+            (%s, %s, %s, %s, %s,
+             %s, %s, %s, %s, %s,
+             %s, %s, %s, %s,
+             %s, %s, %s, %s,
+             %s, %s, %s, %s, %s, %s)
         """
 
         values = (
-            user_id, name, email, contact, position,
-            address, start_date, desired_pay, employment_type,
-            school, school_location, years_attended, education_level, degree, major,
-            job_title, company, experience, responsibilities, skills,
-            eligibility, status, qualified_status, round(confidence, 1)
+            user_id,
+            name,
+            email,
+            contact,
+            position,
+            eligibility,
+            experience,          # maps to yearexperience column
+            level_value,         # Level (required)
+            status,              # numeric status
+            confidence_int,      # confidence as INT
+            address,
+            start_date,
+            desired_pay,
+            employment_type,
+            school,
+            school_location,
+            years_attended,
+            education_level,
+            degree,
+            major,
+            job_title,
+            company,
+            responsibilities,
+            skills,
         )
 
         cur.execute(query, values)
         mysql.connection.commit()
         cur.close()
 
-        # --- 7. UPDATE SESSION WITH THE REASON ---
+        # --- 7. UPDATE SESSION WITH THE RESULT ---
         session["name"] = name
         session["position"] = position
         session["result"] = eligibility
-        session["confidence"] = round(confidence, 1)
-        session["qualified"] = qualified_status
-
-        # SAVE THE REASON TO SESSION SO WE CAN SHOW IT
+        session["confidence"] = confidence_int
         session["reason"] = final_reason
 
-        # Flash the message (Success or Failure detail)
+        # Flash + email when Eligible (Step 1 complete)
         if eligibility == "Eligible":
             flash(f"Application Submitted! {final_reason}", "success")
+            try:
+                send_step1_completed_email(email, name, position)
+            except Exception as e:
+                logger.error(f"Error sending Step 1 email after submit: {e}")
         else:
             flash(f"Application Submitted. Status: {final_reason}", "error")
 
         return redirect(url_for("applicants.dashboard"))
 
     except Exception as e:
+        logger.error(f"submit_application error: {e}")
         flash(f"Error: {e}", "error")
         return redirect(url_for("applicants.dashboard"))
 
@@ -485,6 +545,7 @@ def view_chatbot():
 
 # ---------- Pre-application simple form (CART PRESCREEN) ----------
 
+
 @applicants_bp.route("/prescreenn", methods=["GET", "POST"])
 def prescreen():
     if "user_id" not in session:
@@ -509,7 +570,6 @@ def prescreen():
     result = None
 
     if request.method == "POST":
-        # high_school, bachelor, etc.
         education_level = request.form.get("education_level")
         age = int(request.form.get("age") or 0)
         experience = int(request.form.get("experience") or 0)
@@ -525,7 +585,9 @@ def prescreen():
             result = cart_result
             session["prescreen_result"] = result
             flash(
-                f"Prescreen result: {result['status']} (confidence {result['probability_percent']}%)", "info")
+                f"Prescreen result: {result['status']} (confidence {result['probability_percent']}%)",
+                "info",
+            )
         except Exception as e:
             logger.error(f"CART prescreen error: {e}")
             flash("Error during prescreening.", "error")
@@ -544,6 +606,10 @@ def prescreen():
 
 @applicants_bp.route("/preapp", methods=["GET", "POST"])
 def preapp():
+    """
+    Very simple pre-application: creates a minimal applicants row
+    with eligibility Pending and NO qualified field.
+    """
     if "user_id" not in session:
         flash("You need to log in first.", "error")
         return redirect(url_for("auth.login"))
@@ -568,14 +634,16 @@ def preapp():
         name, email, contact = user_info
 
         eligibility = "Pending"
-        qualified = "Pending"
-        confidence = 0
+        level_value = "N/A"
+        status = 0        # Pending
+        confidence = 0    # no AI score yet
 
         cur.execute(
             """
             INSERT INTO applicants
-            (user_id, name, email, contact, position, yearexperience, eligibility, qualified, confidence)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            (user_id, name, email, contact, position,
+             yearexperience, eligibility, Level, status, confidence)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """,
             (
                 user_id,
@@ -585,17 +653,19 @@ def preapp():
                 position,
                 yearexperience,
                 eligibility,
-                qualified,
+                level_value,
+                status,
                 confidence,
             ),
         )
         mysql.connection.commit()
+        cur.close()
         return redirect(url_for("applicants.preapp"))
 
     cur.execute(
         """
         SELECT name, email, contact, position, yearexperience, eligibility,
-               qualified, confidence
+               Level, status, confidence
         FROM applicants
         WHERE user_id = %s
         ORDER BY id DESC
@@ -607,10 +677,20 @@ def preapp():
     cur.close()
 
     if applicant:
-        name, email, contact, position, yearexperience, eligibility, qualified, confidence = applicant
+        (
+            name,
+            email,
+            contact,
+            position,
+            yearexperience,
+            eligibility,
+            level_value,
+            status,
+            confidence,
+        ) = applicant
         app_needed = False
     else:
-        name = email = contact = position = yearexperience = eligibility = qualified = confidence = None
+        name = email = contact = position = yearexperience = eligibility = level_value = status = confidence = None
         app_needed = True
 
     return render_template(
@@ -621,7 +701,8 @@ def preapp():
         position=position,
         yearexperience=yearexperience,
         eligibility=eligibility,
-        qualified=qualified,
+        level=level_value,
+        status=status,
         confidence=confidence,
         app_needed=app_needed,
     )
@@ -631,8 +712,9 @@ def preapp():
 
 
 def _allowed_profile_file(filename: str) -> bool:
-    allowed = current_app.config.get("ALLOWED_PROFILE_EXTENSIONS", {
-                                     "png", "jpg", "jpeg", "gif"})
+    allowed = current_app.config.get(
+        "ALLOWED_PROFILE_EXTENSIONS", {"png", "jpg", "jpeg", "gif"}
+    )
     return "." in filename and filename.rsplit(".", 1)[1].lower() in allowed
 
 
@@ -697,9 +779,168 @@ def profile():
         position=applicant[5] if applicant else None,
         eligibility=applicant[6] if applicant else None,
         yearexperience=applicant[7] if applicant else None,
-        qualified=applicant[10] if applicant else None,
+        # no qualified field in applicants table anymore
+        qualified=None,
         applications=applications,
     )
+
+
+# ---------- NEW: HR view per job + applicant approve/deny ----------
+
+
+@applicants_bp.route("/job/<path:position>")
+def job_applicants(position):
+    """
+    When called with ?modal=1 returns JSON list of applicants for that position.
+    Can still render full page if you visit /job/<position> directly in browser.
+
+    NOTE:
+    - Here we may still use chatbot.qualification_status to show "Qualified" only
+      from chatbot (not from applicants table).
+    """
+    if "user_id" not in session:
+        if request.args.get("modal") == "1":
+            return jsonify({"error": "not_logged_in"}), 401
+        flash("You must be logged in to view applicants.", "error")
+        return redirect(url_for("auth.login"))
+
+    # only HR users should see this
+    user_id = session["user_id"]
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT usertype FROM users WHERE id = %s", (user_id,))
+    row = cur.fetchone()
+    if not row or row[0] != "hrpage":
+        cur.close()
+        if request.args.get("modal") == "1":
+            return jsonify({"error": "not_authorized"}), 403
+        flash("You are not authorized to view this page.", "error")
+        return redirect(url_for("applicants.dashboard"))
+
+    position = unquote(position)
+
+    # Join with chatbot to read qualification_status from chatbot table ONLY
+    cur.execute(
+        """
+        SELECT 
+            a.id,
+            a.name,
+            a.email,
+            a.contact,
+            a.yearexperience,
+            a.education_level,
+            a.`Level`,
+            c.qualification_status,
+            a.confidence,
+            a.eligibility
+        FROM applicants a
+        LEFT JOIN chatbot c ON c.user_id = a.user_id
+        WHERE a.position = %s
+        ORDER BY a.confidence DESC, a.name ASC
+        """,
+        (position,),
+    )
+    rows = cur.fetchall()
+    cur.close()
+
+    applicants = []
+    for r in rows:
+        applicants.append(
+            {
+                "id": r[0],
+                "name": r[1],
+                "email": r[2],
+                "contact": r[3],
+                "experience": r[4],
+                "education_level": r[5],
+                "level": r[6],
+                # qualified here is from chatbot, not applicants table
+                "qualified": r[7] or "Pending",
+                "confidence": r[8],
+                "eligibility": r[9] or "",
+            }
+        )
+
+    # If modal=1 → JSON for AJAX
+    if request.args.get("modal") == "1":
+        return jsonify({"position": position, "applicants": applicants})
+
+    # Optional: still support full-page view if you ever visit this URL directly
+    return render_template(
+        "job_applicants.html",
+        position=position,
+        applicants=applicants,
+    )
+
+
+@applicants_bp.route("/applicant-decision-json", methods=["POST"])
+def applicant_decision_json():
+    """
+    Approve / Deny from modal via fetch().
+
+    - 'eligibility' keeps the text (Eligible / Not Eligible)
+    - 'status' is the pipeline state:
+        0 = Pending      (after application only)
+        1 = Approved     (final, after all steps)
+        2 = Denied       (final, after all steps)
+
+    When HR clicks approve (Eligible), we also send an email to the applicant
+    telling them they have finished Step 1.
+    """
+    if "user_id" not in session:
+        return jsonify({"error": "not_logged_in"}), 401
+
+    data = request.get_json() or {}
+    applicant_id = data.get("applicant_id")
+    decision = data.get("decision")
+    position = data.get("position")
+
+    if not applicant_id or decision not in ("approve", "deny") or not position:
+        return jsonify({"error": "invalid_data"}), 400
+
+    # eligibility text
+    new_eligibility = "Eligible" if decision == "approve" else "Not Eligible"
+    # numeric pipeline status + human label
+    new_status_code = 1 if decision == "approve" else 2   # 1=Approved, 2=Denied
+    new_status_label = "Approved" if decision == "approve" else "Denied"
+
+    try:
+        cur = mysql.connection.cursor()
+
+        # Get applicant info first (for email)
+        cur.execute(
+            "SELECT name, email, position FROM applicants WHERE id = %s",
+            (applicant_id,),
+        )
+        app_row = cur.fetchone()
+
+        # Update eligibility + numeric status (final decision)
+        cur.execute(
+            "UPDATE applicants SET eligibility = %s, status = %s WHERE id = %s",
+            (new_eligibility, new_status_code, applicant_id),
+        )
+        mysql.connection.commit()
+        cur.close()
+
+        # If approved → send "Step 1 finished" email via service
+        if decision == "approve" and app_row:
+            name, email, db_position = app_row
+            pos_for_email = db_position or position
+            try:
+                send_step1_completed_email(email, name, pos_for_email)
+            except Exception as e:
+                logger.error(
+                    f"Error sending Step 1 email after HR approve: {e}")
+
+        return jsonify({
+            "ok": True,
+            "eligibility": new_eligibility,      # Eligible / Not Eligible
+            "status_label": new_status_label,    # Approved / Denied
+            "status_code": new_status_code       # 1 / 2
+        })
+
+    except Exception as e:
+        logger.error(f"applicant_decision_json error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 # ---------- Misc helpers ----------
@@ -732,8 +973,26 @@ def save_experience():
 
 @applicants_bp.route("/progress")
 def show_progress():
+    """
+    Progress view per position based on chatbot qualification only.
+    applicants table is not used for 'qualified' anymore.
+    """
     cur = mysql.connection.cursor()
-    cur.execute("SELECT position, qualified AS percentage FROM applicants")
+    cur.execute(
+        """
+        SELECT 
+            a.position,
+            COUNT(
+                CASE 
+                    WHEN LOWER(c.qualification_status) = 'qualified'
+                    THEN 1 ELSE NULL
+                END
+            ) AS percentage
+        FROM applicants a
+        LEFT JOIN chatbot c ON c.user_id = a.user_id
+        GROUP BY a.position
+        """
+    )
     progress_data = cur.fetchall()
     cur.close()
     return render_template("progress.html", progress_data=progress_data)

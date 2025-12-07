@@ -80,8 +80,22 @@ def save_summary_report():
         qualification_status = data.get("qualification_status", "")
         advice = data.get("advice", [])
         assessment_data = data.get("assessment_data", [])
-        confidence = float(data.get("confidence", 0))
-        average_score = float(data.get("average_score", 0))
+
+        # safely cast numeric fields
+        raw_confidence = data.get("confidence")
+        raw_avg_score = data.get("average_score")
+
+        try:
+            confidence = float(raw_confidence) if raw_confidence not in (
+                None, "", "NaN") else 0.0
+        except (TypeError, ValueError):
+            confidence = 0.0
+
+        try:
+            average_score = float(raw_avg_score) if raw_avg_score not in (
+                None, "", "NaN") else 0.0
+        except (TypeError, ValueError):
+            average_score = 0.0
 
         if not user_name or not position:
             return jsonify({"error": "Missing user_name or position"}), 400
@@ -111,7 +125,16 @@ def save_summary_report():
         mysql.connection.commit()
         cur.close()
 
-        return jsonify({"message": "Summary report saved.", "redirect": url_for("summary.summary_page")}), 201
+        # 👉 here is a good place to trigger your "step 2" email if you want
+        # from services.email_service import send_step2_email
+        # send_step2_email(user_id, qualification_status, confidence)
+
+        return jsonify(
+            {
+                "message": "Summary report saved.",
+                "redirect": url_for("summary.summary_page"),
+            }
+        ), 201
     except Exception as e:
         logger.error(f"Error in save_summary_report: {e}")
         return jsonify({"error": "Failed to save summary.", "details": str(e)}), 500

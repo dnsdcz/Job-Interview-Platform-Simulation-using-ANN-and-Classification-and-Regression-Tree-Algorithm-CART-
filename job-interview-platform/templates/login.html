@@ -5,16 +5,27 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login Page</title>
+
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Fonts: Outfit for headings, Poppins for body -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+
   <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 
   <style>
+    :root {
+      --primary-red: #B2271B;
+      --primary-red-dark: #921E15;
+      --input-border: #e5e7eb;
+      --text-muted: #6b7280;
+    }
+
     * {
-      font-family: 'Poppins', sans-serif;
       margin: 0;
       padding: 0;
       box-sizing: border-box;
@@ -22,21 +33,47 @@
 
     body {
       height: 100vh;
-      background: linear-gradient(135deg, #1E3E62 0%, #0d1f35 100%);
       display: flex;
       justify-content: center;
       align-items: center;
       padding: 20px;
+
+      font-family: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+      /* 🔴 Smooth blurred-style gradient using your palette */
+      background:
+        radial-gradient(circle at 80% 40%, rgba(255, 255, 255, 0.80), rgba(255, 255, 255, 0) 45%),
+        radial-gradient(circle at 80% 65%, #B2271B 0%, rgba(178, 39, 27, 0.55) 55%, rgba(178, 39, 27, 0) 90%),
+        radial-gradient(circle at 25% 70%, #921E15 0%, rgba(146, 30, 21, 0.45) 60%, rgba(146, 30, 21, 0) 90%),
+        radial-gradient(circle at 15% 25%, #4B0E0A 0%, rgba(75, 14, 10, 0.55) 60%, rgba(75, 14, 10, 0) 90%),
+        linear-gradient(135deg, #4B0E0A, #921E15, #B2271B);
+
+      background-blend-mode: screen, overlay, soft-light, normal;
+      background-attachment: fixed;
+      overflow: hidden;
     }
 
+
+
+
+
+    /* Headings & main title use Outfit */
+    h1,
+    h2,
+    h3,
+    .logtitle {
+      font-family: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    /* MAIN CARD – similar layout to screenshot */
     .container {
       display: flex;
       width: 100%;
       max-width: 1100px;
       height: 600px;
-      background: #fff;
-      border-radius: 20px;
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+      background: linear-gradient(135deg, var(--primary-red-dark) 0%, #4b0e0a 100%);
+      border-radius: 32px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
       overflow: hidden;
       animation: fadeInUp 0.5s ease;
     }
@@ -53,77 +90,90 @@
       }
     }
 
+    /* LEFT SIDE – white “blob” with illustration */
     .left-side {
-      flex: 1;
-      background: url("{{ url_for('static', filename='Interview.png') }}") no-repeat center;
-      background-position: center center;
-      background-size: cover;
+      flex: 1.1;
       position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
     }
 
     .left-side::before {
       content: '';
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: linear-gradient(135deg, rgba(30, 62, 98, 0.05) 0%, rgba(30, 62, 98, 0.1) 100%);
-      pointer-events: none;
+      width: 160%;
+      height: 160%;
+      background: #ffffff;
+      border-radius: 55% 45% 55% 45%;
+      transform: translateX(-10%);
     }
 
+    .left-side::after {
+      content: '';
+      position: absolute;
+      inset: 20%;
+      background: url("{{ url_for('static', filename='login.png') }}") no-repeat center;
+      background-size: contain;
+      z-index: 1;
+    }
+
+    /* RIGHT SIDE – form area */
     .right-side {
-      flex: 1;
+      flex: 0.9;
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 50px 40px;
-      background: rgba(255, 255, 255, 0.95);
+      padding: 40px 40px;
+      background: transparent;
     }
 
     .login-box {
       width: 100%;
-      max-width: 400px;
+      max-width: 380px;
+      background: rgba(255, 255, 255, 0.96);
+      border-radius: 24px;
+      padding: 30px 26px 28px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
     }
 
     .logtitle {
-      font-size: 36px;
+      font-size: 32px;
       font-weight: 700;
-      margin-bottom: 10px;
-      text-align: center;
-      background: linear-gradient(135deg, #1E3E62 0%, #4a6fa5 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      margin-bottom: 6px;
+      text-align: left;
+      color: #111827;
     }
 
     .subtitle {
-      text-align: center;
-      color: #6b7280;
-      font-size: 14px;
-      margin-bottom: 30px;
+      text-align: left;
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-bottom: 24px;
     }
 
     .form-group {
       position: relative;
-      margin-bottom: 25px;
+      margin-bottom: 20px;
     }
 
     .form-group input {
       width: 100%;
       padding: 12px 15px 12px 45px;
-      border-radius: 30px;
-      border: 2px solid #e5e7eb;
+      border-radius: 999px;
+      border: 2px solid var(--input-border);
       background: #f9fafb;
-      font-size: 16px;
+      font-size: 15px;
       transition: all 0.3s ease;
+      font-family: 'Poppins', sans-serif;
     }
 
     .form-group input:focus {
-      border-color: #1E3E62;
+      border-color: var(--primary-red);
       background-color: #fff;
       outline: none;
-      box-shadow: 0 0 0 4px rgba(30, 62, 98, 0.1);
+      box-shadow: 0 0 0 4px rgba(178, 39, 27, 0.14);
     }
 
     .form-group i {
@@ -137,45 +187,63 @@
     }
 
     .form-group input:focus+i {
-      color: #1E3E62;
+      color: var(--primary-red);
     }
 
     /* Password toggle button */
     .password-toggle {
       position: absolute;
       top: 50%;
-      right: 15px;
+      right: 18px;
       transform: translateY(-50%);
       background: none;
       border: none;
-      color: #9ca3af;
-      font-size: 18px;
+      padding: 0;
+      margin: 0;
+      height: 24px;
+      width: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
-      padding: 5px;
+      color: #9ca3af;
+      font-size: 20px;
       transition: color 0.3s ease;
     }
 
+    .password-toggle i {
+      font-size: 20px;
+    }
+
     .password-toggle:hover {
-      color: #1E3E62;
+      color: var(--primary-red);
+    }
+
+
+
+    .password-toggle:hover {
+      color: var(--primary-red);
     }
 
     .btn-login {
       width: 100%;
-      padding: 12px;
+      padding: 11px;
       border: none;
-      border-radius: 30px;
-      background: linear-gradient(135deg, #1E3E62 0%, #4a6fa5 100%);
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--primary-red) 0%, var(--primary-red-dark) 100%);
       color: white;
       font-weight: 600;
-      font-size: 16px;
+      font-size: 15px;
       cursor: pointer;
       transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(30, 62, 98, 0.3);
+      box-shadow: 0 4px 15px rgba(178, 39, 27, 0.35);
+      font-family: 'Poppins', sans-serif;
+      margin-top: 6px;
     }
 
     .btn-login:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(30, 62, 98, 0.4);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(146, 30, 21, 0.45);
     }
 
     .btn-login:active {
@@ -189,13 +257,13 @@
 
     .form-footer {
       text-align: right;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
     }
 
     .form-footer a,
     .register-link a {
-      font-size: 14px;
-      color: #1E3E62;
+      font-size: 13px;
+      color: var(--primary-red);
       text-decoration: none;
       position: relative;
       font-weight: 500;
@@ -204,7 +272,7 @@
 
     .form-footer a:hover,
     .register-link a:hover {
-      color: #4a6fa5;
+      color: var(--primary-red-dark);
     }
 
     .form-footer a::after,
@@ -215,7 +283,7 @@
       bottom: -2px;
       width: 0%;
       height: 2px;
-      background-color: #1E3E62;
+      background-color: var(--primary-red);
       transition: width 0.3s ease;
     }
 
@@ -226,9 +294,9 @@
 
     .register-link {
       text-align: center;
-      margin-top: 20px;
-      font-size: 14px;
-      color: #6b7280;
+      margin-top: 14px;
+      font-size: 13px;
+      color: var(--text-muted);
     }
 
     .error-input {
@@ -245,11 +313,11 @@
       }
 
       25% {
-        transform: translateX(-5px);
+        transform: translateX(-4px);
       }
 
       75% {
-        transform: translateX(5px);
+        transform: translateX(4px);
       }
     }
 
@@ -257,13 +325,13 @@
       background: #fef2f2;
       border: 1px solid #fecaca;
       color: #991b1b;
-      padding: 12px 15px;
+      padding: 10px 12px;
       border-radius: 12px;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-size: 14px;
+      gap: 8px;
+      font-size: 13px;
       animation: slideDown 0.3s ease;
     }
 
@@ -284,20 +352,22 @@
       flex-shrink: 0;
     }
 
-    .g-recaptcha {
-      margin: 20px 0;
-      display: flex;
+    /* RECAPTCHA: wrapper is hidden at first */
+    .g-recaptcha-wrapper {
+      margin: 16px 0 6px;
+      display: none;
       justify-content: center;
     }
 
+    /* Optional notice block if you want, otherwise you can remove this whole class */
     .recaptcha-notice {
       background: #fef3c7;
       border: 1px solid #fde68a;
       color: #92400e;
-      padding: 10px 12px;
+      padding: 8px 10px;
       border-radius: 12px;
-      margin: 15px 0;
-      font-size: 12px;
+      margin: 10px 0;
+      font-size: 11px;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -308,22 +378,53 @@
       flex-shrink: 0;
     }
 
-    @media (max-width: 768px) {
+    .terms-group {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 11px;
+      color: #4b5563;
+    }
+
+    .terms-group input[type="checkbox"] {
+      margin-top: 3px;
+    }
+
+    .terms-group a {
+      color: var(--primary-red);
+      text-decoration: underline;
+      font-weight: 500;
+    }
+
+    @media (max-width: 900px) {
       .container {
         flex-direction: column;
         height: auto;
       }
 
       .left-side {
-        height: 200px;
+        order: 1;
+        height: 220px;
+      }
+
+      .left-side::before {
+        width: 200%;
+        height: 200%;
+        transform: translateY(10%);
       }
 
       .right-side {
-        padding: 30px 20px;
+        order: 2;
+        padding: 24px 18px 30px;
+      }
+
+      .login-box {
+        max-width: 100%;
       }
 
       .logtitle {
-        font-size: 30px;
+        font-size: 28px;
       }
     }
   </style>
@@ -334,6 +435,7 @@
       const inputs = form.querySelectorAll('input[required]');
       const passwordInput = document.querySelector('input[name="password"]');
       const passwordToggle = document.getElementById('passwordToggle');
+      const recaptchaWrapper = document.getElementById('recaptchaWrapper');
       const defaultPlaceholders = {};
 
       inputs.forEach(input => {
@@ -342,13 +444,17 @@
 
       const showError = (input, message) => {
         input.classList.add('error-input');
-        input.placeholder = message;
-        input.value = '';
+        if (input.type !== 'checkbox') {
+          input.placeholder = message;
+          input.value = '';
+        }
       };
 
       const clearError = (input) => {
         input.classList.remove('error-input');
-        input.placeholder = defaultPlaceholders[input.name];
+        if (input.type !== 'checkbox') {
+          input.placeholder = defaultPlaceholders[input.name];
+        }
       };
 
       // Password visibility toggle
@@ -357,7 +463,6 @@
         const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
         passwordInput.setAttribute('type', type);
 
-        // Toggle icon
         if (type === 'text') {
           passwordToggle.innerHTML = '<i class="bx bx-hide"></i>';
         } else {
@@ -365,9 +470,16 @@
         }
       });
 
+      // Show reCAPTCHA when user focuses password field
+      if (passwordInput && recaptchaWrapper) {
+        passwordInput.addEventListener('focus', () => {
+          recaptchaWrapper.style.display = 'flex';
+        });
+      }
+
       inputs.forEach(input => {
         input.addEventListener('blur', () => {
-          if (!input.value.trim()) {
+          if (!input.value.trim() && input.type !== 'checkbox') {
             showError(input, 'Please enter ' + (input.name === 'email' ? 'email' : 'password'));
           }
         });
@@ -386,7 +498,11 @@
       form.addEventListener('submit', (e) => {
         let valid = true;
         inputs.forEach(input => {
-          if (!input.value.trim()) {
+          if (input.type === 'checkbox') {
+            if (!input.checked) {
+              valid = false;
+            }
+          } else if (!input.value.trim()) {
             showError(input, 'Please enter ' + (input.name === 'email' ? 'email' : 'password'));
             valid = false;
           }
@@ -400,10 +516,11 @@
 <body>
   <div class="container">
     <div class="left-side"></div>
+
     <div class="right-side">
       <div class="login-box">
         <div class="logtitle">Login</div>
-        <p class="subtitle">Welcome back! Please login to your account</p>
+        <p class="subtitle">Welcome back! Please login to your account.</p>
 
         <form method="POST" action="">
           {% if error %}
@@ -429,26 +546,21 @@
           <div class="form-footer">
             <a href="/forgot">Forgot Password?</a>
           </div>
+
           <!-- Terms and Conditions Checkbox -->
           <div class="terms-group">
             <input type="checkbox" id="terms" name="terms" required>
             <label for="terms">
-              I agree to the <a href="/terms" target="_blank">Terms & Conditions</a> and <a href="/privacy"
-                target="_blank">Privacy Policy</a>
+              I agree to the
+              <a href="/terms" target="_blank">Terms &amp; Conditions</a> and
+              <a href="/privacy" target="_blank">Privacy Policy</a>
             </label>
           </div>
 
-
-          <!-- Google Recaptcha - Replace with valid v2 site key -->
-          <div class="g-recaptcha" data-sitekey="6LfLvBEsAAAAAD3LBG4FWmxbsEPn1068Nv6IO3Fm"></div>
-          <!-- 
-            To fix "Invalid key type" error:
-            1. Visit https://www.google.com/recaptcha/admin
-            2. Create a new reCAPTCHA v2 Checkbox (NOT v3)
-            3. Add your domain (localhost for testing)
-            4. Replace the data-sitekey above with your new key
-            5. Update your Python backend to verify the reCAPTCHA token
-          -->
+          <!-- Google Recaptcha: hidden until password field is focused -->
+          <div class="g-recaptcha-wrapper" id="recaptchaWrapper">
+            <div class="g-recaptcha" data-sitekey="6LfLvBEsAAAAAD3LBG4FWmxbsEPn1068Nv6IO3Fm"></div>
+          </div>
 
           <button class="btn-login" type="submit">Login</button>
 
@@ -459,14 +571,15 @@
       </div>
     </div>
   </div>
+
+  <!-- Session/back button logic (unchanged) -->
   <script>
     // Prevent going back to login if already logged in
     window.addEventListener('pageshow', function (event) {
       if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
-        // Clear form data when page is loaded from cache
-        document.querySelector('form').reset();
+        const form = document.querySelector('form');
+        if (form) form.reset();
 
-        // Check if user is logged in by making a quick request
         fetch('/check_session', {
           method: 'GET',
           credentials: 'include'
@@ -474,7 +587,6 @@
           .then(response => response.json())
           .then(data => {
             if (data.logged_in) {
-              // User is logged in, redirect to dashboard
               if (data.usertype === 'applicant') {
                 window.location.replace('/dashboard');
               } else if (data.usertype === 'hrpage') {
@@ -492,6 +604,5 @@
     };
   </script>
 </body>
-
 
 </html>

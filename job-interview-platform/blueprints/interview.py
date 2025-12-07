@@ -92,6 +92,20 @@ def chatbot_page():
     experience = session.get("experience", 0)
     position = session.get("position", "Business Analyst")
 
+    # 🔒 Check if this user already has a chatbot record
+    cur = mysql.connection.cursor()
+    cur.execute(
+        "SELECT id FROM chatbot WHERE user_id = %s ORDER BY id DESC LIMIT 1",
+        (user_id,),
+    )
+    existing = cur.fetchone()
+    cur.close()
+
+    if existing:
+        # Already finished interview – send them to summary or overview instead
+        flash("You have already completed the chat interview.", "info")
+        return redirect(url_for("summary.summary_report"))
+
     return render_template(
         "chatbot.html",
         name=name,
