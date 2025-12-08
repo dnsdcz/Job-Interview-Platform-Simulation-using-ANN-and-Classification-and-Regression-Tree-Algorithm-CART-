@@ -2,7 +2,7 @@
 from flask import Flask
 from config import Config
 from extensions import mysql, mail, limiter, logger
-from blueprints import register_blueprints
+from blueprints import register_blueprints  # ⬅️ this will handle ALL blueprints
 
 
 def create_app():
@@ -14,7 +14,7 @@ def create_app():
     mail.init_app(app)
     limiter.init_app(app)
 
-    # register blueprints
+    # register ALL blueprints in one place
     register_blueprints(app)
 
     logger.info("✅ Application created and blueprints registered.")

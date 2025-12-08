@@ -217,7 +217,7 @@ def forgot_password():
         otp = generate_otp(email)
         if send_otp_email(email, otp):
             flash("OTP sent to your email.", "info")
-            return redirect(url_for("auth.verify_otp", email=email))
+            return redirect(url_for("auth.verify_otp_route", email=email))
         flash("Failed to send OTP.", "error")
         return redirect(url_for("auth.forgot_password"))
 

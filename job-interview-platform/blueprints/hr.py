@@ -6,283 +6,370 @@ from flask import (
     session,
     redirect,
     url_for,
-    flash,
+    jsonify,
+    current_app,
 )
-from extensions import mysql
+from extensions import mysql, mail
+from flask_mail import Message
 import datetime
-import smtplib
-from email.message import EmailMessage
+from .schedule import get_progress_data
 
 hr_bp = Blueprint("hr", __name__)
-
-# === SIMPLE SMTP CONFIG – CHANGE THESE TO YOUR REAL VALUES ===
-SMTP_HOST = "smtp.gmail.com"
-SMTP_PORT = 587
-SMTP_USER = "your_email@example.com"      # TODO: change
-SMTP_PASS = "your_app_password"           # TODO: change
-FROM_NAME = "AceView HR"
-
-
-def send_email(to_address, subject, body):
-    """
-    Simple SMTP email sender.
-    Make sure SMTP_* constants above are configured correctly.
-    """
-    if not to_address:
-        return
-
-    msg = EmailMessage()
-    msg["Subject"] = subject
-    msg["From"] = f"{FROM_NAME} <{SMTP_USER}>"
-    msg["To"] = to_address
-    msg.set_content(body)
-
-    try:
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-            server.starttls()
-            server.login(SMTP_USER, SMTP_PASS)
-            server.send_message(msg)
-    except Exception as e:
-        # Log the error; don’t crash the request
-        print(f"[EMAIL ERROR] Could not send to {to_address}: {e}")
 
 
 @hr_bp.route("/hr")
 def hr_dashboard():
     if "user_id" not in session:
-        flash("You need to log in first.", "error")
         return redirect(url_for("auth.login"))
 
     user_id = session["user_id"]
     cur = mysql.connection.cursor()
 
-    # --- User info ---
-    cur.execute("SELECT email, username FROM users WHERE id = %s", (user_id,))
+    # 1) Logged-in HR user info
+    cur.execute(
+        "SELECT email, username, profile_photo FROM users WHERE id = %s",
+        (user_id,),
+    )
     user = cur.fetchone()
     if not user:
         cur.close()
-        flash("User not found.", "error")
         return redirect(url_for("auth.login"))
-    email, username = user
 
-  # --- General stats: applicants + chatbot ---
+    email, username, profile_photo = user
 
-    # Total applicants in applicants table (for your top cards)
+    # 2) BASIC COUNTS (for cards)
+    # Total "applicants" in applicants table
     cur.execute("SELECT COUNT(*) FROM applicants")
-    applicant_count = cur.fetchone()[0] or 0
+    total_requests = cur.fetchone()[0] or 0
 
-    # Total records processed by chatbot
-    cur.execute("SELECT COUNT(*) FROM chatbot")
-    chatbot_total = cur.fetchone()[0] or 0
-
-    # Only those marked as qualified in chatbot
-    cur.execute("""
-            SELECT COUNT(*)
-            FROM chatbot
-            WHERE LOWER(qualification_status) = 'qualified'
-        """)
-    qualified_total = cur.fetchone()[0] or 0
-
-    # Example: chatbot_progress = "has chatbot run for anyone?"
-    chatbot_progress = 100 if chatbot_total > 0 else 0
-
-    # Applicant progress = % of chatbot entries that are qualified
-    applicant_progress = (
-        (qualified_total / chatbot_total) * 100
-        if chatbot_total > 0
-        else 0
-    )
-
-    # --- Existing per-position progress_data (for your progress bars) ---
-    cur.execute("SELECT position, max_allowed FROM position_limits")
-    limits = {pos: max_allowed for pos, max_allowed in cur.fetchall()}
+    # CART Eligible / Not Eligible
+    cur.execute("SELECT COUNT(*) FROM applicants WHERE eligibility = 'Eligible'")
+    cart_eligible = cur.fetchone()[0] or 0
 
     cur.execute(
-        "SELECT position, COUNT(*) AS current_count FROM applicants GROUP BY position"
+        "SELECT COUNT(*) FROM applicants WHERE eligibility IS NULL OR eligibility <> 'Eligible'"
     )
-    counts = {pos: count for pos, count in cur.fetchall()}
+    cart_not_eligible = cur.fetchone()[0] or 0
 
-    positions = ["Business Analyst", "Project Analyst", "Java Developer"]
-    progress_data = []
-    for pos in positions:
-        current = counts.get(pos, 0)
-        max_allowed = limits.get(pos, 10)
-        percentage = (current / max_allowed) * \
-            100 if max_allowed > 0 else 0
-        percentage = min(percentage, 100)
-        progress_data.append(
-            {
-                "position": pos,
-                "percentage": round(percentage, 2),
-                "current": current,
-                "max": max_allowed,
-            }
-        )
+    # ANN Qualified / Not Qualified
+    cur.execute(
+        "SELECT COUNT(*) FROM chatbot WHERE qualification_status = 'Qualified'"
+    )
+    ann_qualified = cur.fetchone()[0] or 0
 
-     # --- Jobs overview data for the dashboard table ---
+    cur.execute(
+        "SELECT COUNT(*) FROM chatbot WHERE qualification_status = 'Not Qualified'"
+    )
+    ann_not_qualified = cur.fetchone()[0] or 0
+
+    # 3) RECENT APPLICANTS TABLE (Dashboard)
     cur.execute(
         """
         SELECT 
-            pl.position,
-            pl.opening_date,
-            pl.deadline_date,
-            pl.max_allowed,
-            pl.form_access,
-            -- count only qualified applicants from chatbot
-            COUNT(
-                CASE 
-                    WHEN LOWER(c.qualification_status) = 'qualified' 
-                    THEN 1 
-                    ELSE NULL 
-                END
-            ) AS applicant_count
-        FROM position_limits pl
-        LEFT JOIN applicants a 
-            ON a.position = pl.position
-        LEFT JOIN chatbot c
-            ON c.user_id = a.user_id
-        GROUP BY 
-            pl.position, pl.opening_date, pl.deadline_date, 
-            pl.max_allowed, pl.form_access
-        ORDER BY 
-            CASE WHEN pl.opening_date IS NULL THEN 1 ELSE 0 END,
-            pl.opening_date
+            a.id,
+            a.name,
+            a.email,
+            a.position,
+            a.eligibility,
+            IFNULL(c.qualification_status, 'Pending') AS ann_status,
+            IFNULL(c.average_score, 0) AS avg_score,
+            IFNULL(a.status, 'Pending') AS hr_status,
+            a.start_date
+        FROM applicants a
+        LEFT JOIN chatbot c ON a.user_id = c.user_id
+        ORDER BY a.id DESC
+        LIMIT 15
         """
     )
-    job_rows = cur.fetchall()
+    applicant_rows = cur.fetchall()
 
-    today = datetime.date.today()
-    jobs = []
-
-    for row in job_rows:
-        position, opening_date, deadline_date, max_allowed, form_access, applicant_cnt = row
-
-        # Ensure dates are date objects
-        if isinstance(opening_date, datetime.datetime):
-            opening_date = opening_date.date()
-        if isinstance(deadline_date, datetime.datetime):
-            deadline_date = deadline_date.date()
-
-        # Status shown in the "Status" column
-        if deadline_date and deadline_date < today:
-            status = "Closed"
-        elif max_allowed and applicant_cnt >= max_allowed:
-            status = "On hold"
+    recent_applicants = []
+    for row in applicant_rows:
+        # start_date might be None or datetime/date
+        applied_date = row[8]
+        if isinstance(applied_date, (datetime.date, datetime.datetime)):
+            applied_date_val = applied_date
         else:
-            status = "In progress"
+            applied_date_val = None
 
-        openings = max_allowed or 0
-        closed_fill = min(applicant_cnt, openings) if openings > 0 else 0
-
-        # time_to_hire kept for potential use (not shown in table now)
-        if opening_date and deadline_date:
-            days = (deadline_date - opening_date).days
-            time_to_hire = f"{days:02d} days"
-        else:
-            time_to_hire = "—"
-
-        jobs.append(
+        recent_applicants.append(
             {
-                "title": position,
-                "deadline": deadline_date.strftime("%b %d, %Y") if deadline_date else "—",
-                "status": status,
-                "openings": openings,
-                "closed": closed_fill,
-                "applicants": applicant_cnt,   # this is now "qualified applicants"
-                "time_to_hire": time_to_hire,
-                "decision": form_access or "",  # '', 'approved', 'denied'
+                "id": row[0],
+                "name": row[1],
+                "email": row[2],
+                "role": row[3],
+                "cart_status": row[4],
+                "ann_status": row[5],
+                "score": float(row[6]) if row[6] is not None else 0.0,
+                "hr_status": row[7],
+                "applied_date": applied_date_val,
             }
         )
 
+    # 4) UPCOMING INTERVIEWS (simple example)
+    cur.execute(
+        """
+        SELECT a.name, a.position
+        FROM chatbot c
+        JOIN applicants a ON c.user_id = a.user_id
+        WHERE c.qualification_status = 'Qualified'
+        LIMIT 3
+        """
+    )
+    interview_rows = cur.fetchall()
+    upcoming_interviews = []
+    for row in interview_rows:
+        upcoming_interviews.append(
+            {
+                "candidate_name": row[0],
+                "position": row[1],
+                "day": "Today",
+                "date_str_short": datetime.date.today().strftime("%b %d"),
+                "start_time": "10:00 AM",
+            }
+        )
+
+    # 5) CART–ANN RELATIONSHIP COUNTS (for tables + metrics)
+    cur.execute(
+        """
+        SELECT a.eligibility, c.qualification_status, COUNT(*)
+        FROM applicants a
+        JOIN chatbot c ON a.user_id = c.user_id
+        GROUP BY a.eligibility, c.qualification_status
+        """
+    )
+    rel_rows = cur.fetchall()
+
+    cart_ann_matrix = {
+        "eligible_qualified": 0,
+        "eligible_not_qualified": 0,
+        "not_eligible_qualified": 0,
+        "not_eligible_not_qualified": 0,
+    }
+
+    for eligibility, qual_status, count in rel_rows:
+        eligibility = eligibility or "Not Eligible"
+        qual_status = qual_status or "Not Qualified"
+
+        if eligibility == "Eligible" and qual_status == "Qualified":
+            cart_ann_matrix["eligible_qualified"] += count
+        elif eligibility == "Eligible" and qual_status == "Not Qualified":
+            cart_ann_matrix["eligible_not_qualified"] += count
+        elif eligibility != "Eligible" and qual_status == "Qualified":
+            cart_ann_matrix["not_eligible_qualified"] += count
+        else:
+            cart_ann_matrix["not_eligible_not_qualified"] += count
+
+    # 6) PERFORMANCE METRICS FOR CART (treat ANN result as "ground truth")
+    tp_c = cart_ann_matrix["eligible_qualified"]
+    fp_c = cart_ann_matrix["eligible_not_qualified"]
+    fn_c = cart_ann_matrix["not_eligible_qualified"]
+    tn_c = cart_ann_matrix["not_eligible_not_qualified"]
+
+    total_c = tp_c + fp_c + fn_c + tn_c
+    if total_c > 0:
+        acc_c = (tp_c + tn_c) / total_c
+        err_c = 1.0 - acc_c
+    else:
+        acc_c = 0.0
+        err_c = 0.0
+
+    cart_metrics = {
+        "tp": tp_c,
+        "fp": fp_c,
+        "fn": fn_c,
+        "tn": tn_c,
+        "accuracy": acc_c,
+        "error_rate": err_c,
+        "total": total_c,
+    }
+
+    # 7) PERFORMANCE METRICS FOR ANN (vs HR decision Approved/Rejected)
+    cur.execute(
+        """
+        SELECT c.qualification_status, a.status, COUNT(*)
+        FROM chatbot c
+        JOIN applicants a ON a.user_id = c.user_id
+        WHERE c.qualification_status IN ('Qualified','Not Qualified')
+          AND a.status IN ('Approved','Rejected')
+        GROUP BY c.qualification_status, a.status
+        """
+    )
+    ann_rel_rows = cur.fetchall()
+
+    tp_a = fp_a = fn_a = tn_a = 0
+    for qual_status, hr_status, count in ann_rel_rows:
+        if qual_status == "Qualified" and hr_status == "Approved":
+            tp_a += count
+        elif qual_status == "Qualified" and hr_status == "Rejected":
+            fp_a += count
+        elif qual_status == "Not Qualified" and hr_status == "Approved":
+            fn_a += count
+        elif qual_status == "Not Qualified" and hr_status == "Rejected":
+            tn_a += count
+
+    total_a = tp_a + fp_a + fn_a + tn_a
+    if total_a > 0:
+        acc_a = (tp_a + tn_a) / total_a
+        err_a = 1.0 - acc_a
+    else:
+        acc_a = 0.0
+        err_a = 0.0
+
+    ann_metrics = {
+        "tp": tp_a,
+        "fp": fp_a,
+        "fn": fn_a,
+        "tn": tn_a,
+        "accuracy": acc_a,
+        "error_rate": err_a,
+        "total": total_a,
+    }
+
     cur.close()
+
+    # 8) RECRUITMENT PROGRESS
+    progress_data = get_progress_data()
 
     return render_template(
         "Hrpage.html",
+        username=username or "HR Manager",
         email=email,
-        username=username,
-        chatbot_total=chatbot_total,
-        applicant_count=applicant_count,
-        chatbot_progress=chatbot_progress,
-        applicant_progress=applicant_progress,
+        total_requests=total_requests,
+        cart_eligible=cart_eligible,
+        cart_not_eligible=cart_not_eligible,
+        ann_qualified=ann_qualified,
+        ann_not_qualified=ann_not_qualified,
+        jobs=[],  # (you can keep or remove jobs if you use it elsewhere)
+        upcoming_interviews=upcoming_interviews,
+        recent_applicants=recent_applicants,
         progress_data=progress_data,
-        jobs=jobs,
+        cart_ann_matrix=cart_ann_matrix,
+        cart_metrics=cart_metrics,
+        ann_metrics=ann_metrics,
     )
 
 
-@hr_bp.route("/set-username", methods=["POST"])
-def set_username():
+@hr_bp.route("/applicant-details/<int:app_id>")
+def get_applicant_details(app_id):
     if "user_id" not in session:
-        flash("You must be logged in to set a username.", "error")
-        return redirect(url_for("auth.login"))
-
-    user_id = session["user_id"]
-    username = request.form["username"]
+        return jsonify({"error": "Unauthorized"}), 401
 
     cur = mysql.connection.cursor()
-    cur.execute("UPDATE users SET username = %s WHERE id = %s",
-                (username, user_id))
-    mysql.connection.commit()
+    cur.execute(
+        """
+        SELECT 
+            a.name,
+            a.email,
+            a.position,
+            a.eligibility,
+            a.yearexperience,
+            a.skills,
+            c.qualification_status,
+            c.average_score,
+            c.assessment_data
+        FROM applicants a
+        LEFT JOIN chatbot c ON a.user_id = c.user_id
+        WHERE a.id = %s
+        """,
+        (app_id,),
+    )
+    row = cur.fetchone()
     cur.close()
 
-    flash("Username updated successfully!", "success")
-    return redirect(url_for("hr.hr_dashboard"))
+    if not row:
+        return jsonify({"error": "Not found"}), 404
+
+    return jsonify(
+        {
+            "name": row[0],
+            "email": row[1],
+            "role": row[2],
+            "cart_status": row[3],
+            "experience": row[4],
+            "skills": row[5],
+            "ann_status": row[6] if row[6] else "Pending",
+            "ann_score": float(row[7]) if row[7] else 0,
+            "qa_data": row[8],
+        }
+    )
 
 
-@hr_bp.route("/job-decision", methods=["POST"])
-def job_decision():
-    """
-    Handle Approve / Deny buttons for a job row.
-    If approved, send email to all applicants for that position.
-    """
+@hr_bp.route("/applicant-decision-json", methods=["POST"])
+def applicant_decision_json():
     if "user_id" not in session:
-        flash("You need to log in first.", "error")
-        return redirect(url_for("auth.login"))
+        return jsonify({"ok": False, "msg": "Unauthorized"}), 401
 
-    position = request.form.get("position")
-    decision = request.form.get("decision")  # "approve" or "deny"
+    data = request.get_json() or {}
+    app_id = data.get("applicant_id")
+    decision = data.get("decision")
 
-    if not position or decision not in ("approve", "deny"):
-        flash("Invalid action.", "error")
-        return redirect(url_for("hr.hr_dashboard"))
-
-    cur = mysql.connection.cursor()
-
-    # Map decision to a status string stored in position_limits.form_access
-    status_value = "approved" if decision == "approve" else "denied"
+    if not app_id or decision not in ("approve", "reject"):
+        return jsonify({"ok": False, "msg": "Invalid data"}), 400
 
     try:
+        cur = mysql.connection.cursor()
         cur.execute(
-            "UPDATE position_limits SET form_access = %s WHERE position = %s",
-            (status_value, position),
+            "SELECT name, email FROM applicants WHERE id = %s", (app_id,))
+        row = cur.fetchone()
+        if not row:
+            cur.close()
+            return jsonify({"ok": False, "msg": "Applicant not found"}), 404
+
+        app_name, app_email = row
+        new_status = "Approved" if decision == "approve" else "Rejected"
+
+        cur.execute(
+            "UPDATE applicants SET status = %s WHERE id = %s",
+            (new_status, app_id),
         )
         mysql.connection.commit()
-    except Exception as e:
-        print("[DB ERROR] Updating form_access failed:", e)
+        cur.close()
 
-    # If approved, notify applicants by email
-    if decision == "approve":
-        # Use your real fields: name + email
-        cur.execute(
-            "SELECT email, name FROM applicants WHERE position = %s",
-            (position,),
-        )
-        rows = cur.fetchall()
+        # email body
+        if decision == "approve":
+            subject = "AceView Application Update - Congratulations!"
+            body = f"""Dear {app_name},
 
-        for email_addr, full_name in rows:
-            subject = f"Application update for {position}"
-            body = (
-                f"Dear {full_name},\n\n"
-                f"Your application for the position '{position}' has been approved "
-                f"by our HR team to proceed to the next step of the process.\n\n"
-                f"Please wait for further instructions regarding scheduling.\n\n"
-                f"Best regards,\nAceView HR"
+We are pleased to inform you that your application has been APPROVED for the next stage of our recruitment process.
+
+Our HR team will contact you soon with the next steps and schedule details.
+
+Best regards,
+AceView Recruitment Team
+"""
+        else:
+            subject = "AceView Application Update"
+            body = f"""Dear {app_name},
+
+Thank you for taking the time to apply and interview with us.
+
+After careful consideration, we regret to inform you that you have not been selected at this time.
+We encourage you to apply again in the future for other opportunities.
+
+Best regards,
+AceView Recruitment Team
+"""
+
+        try:
+            default_sender = current_app.config.get("MAIL_DEFAULT_SENDER") or current_app.config.get(
+                "MAIL_USERNAME"
             )
-            send_email(email_addr, subject, body)
+            msg = Message(subject=subject, recipients=[
+                          app_email], sender=default_sender)
+            msg.body = body
+            mail.send(msg)
+        except Exception as mail_err:
+            print("DECISION EMAIL ERROR:", mail_err)
 
-        flash(
-            f"{position} approved. Notification emails sent to applicants.", "success")
-    else:
-        flash(f"{position} marked as denied.", "info")
+    except Exception as e:
+        print("DECISION GENERAL ERROR:", e)
+        return jsonify({"ok": False, "msg": "Server error"}), 500
 
-    cur.close()
-    return redirect(url_for("hr.hr_dashboard"))
+    return jsonify({"ok": True})
+
+
+@hr_bp.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("auth.login"))

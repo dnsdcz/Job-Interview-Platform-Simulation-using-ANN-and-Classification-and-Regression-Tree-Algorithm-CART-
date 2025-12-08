@@ -4,773 +4,329 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AceView HR Dashboard</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@3.2.0/dist/fullcalendar.min.css" />
+    <title>HR Dashboard</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Poppins:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
         :root {
-            --primary-color: #4361ee;
-            --secondary-color: #3f37c9;
-            --success-color: #10b981;
-            --text-light: #f8f9fa;
-            --text-dark: #212529;
-            --bg-light: #f8f9fa;
-            --bg-dark: #121212;
-            --card-light: #ffffff;
-            --card-dark: #2c2c2c;
-            --sidebar-light: #f0f0f0;
-            --sidebar-dark: #2d3748;
+            --primary-red: #B2271B;
+            --primary-red-dark: #921E15;
+            --primary-red-light: #fef2f2;
+
+            --bg-body: #f3f4f6;
+            --surface-white: #ffffff;
+            --surface-grey: #f9fafb;
+
+            --text-dark: #1f2937;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+
+            --radius-xl: 30px;
+            --radius-l: 20px;
+            --radius-m: 12px;
+
+            --shadow-soft: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
             --transition: all 0.3s ease;
         }
 
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', 'Roboto', sans-serif;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
         }
 
         body {
-            background: url("{{ url_for('static', filename = 'bg.png')}}") no-repeat center center fixed;
-            background-size: cover;
-            background-color: var(--bg-light);
-            color: #000;
-            min-height: 100vh;
+            height: 100vh;
+            width: 100vw;
             display: flex;
-            flex-direction: column;
-            transition: var(--transition);
-            position: relative;
-            overflow-x: hidden;
-        }
-
-        body.dark {
-            background-color: var(--bg-dark);
-            color: var(--text-light);
-        }
-
-
-        body.dark .box {
-            background-color: var(--card-dark);
-        }
-
-        /* Header Styling */
-        .topbar {
-            display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
-            padding: 1rem 2rem;
-            background-color: #1E3E62;
-            border-bottom: 1px solid #e0e0e0;
-            box-shadow: 0 2px 10px #2a2a3f;
-            transition: var(--transition);
-            position: relative;
-            z-index: 100;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 80% 40%, rgba(255, 255, 255, 0.80), rgba(255, 255, 255, 0) 45%),
+                radial-gradient(circle at 80% 65%, #B2271B 0%, rgba(178, 39, 27, 0.55) 55%, rgba(178, 39, 27, 0) 90%),
+                radial-gradient(circle at 25% 70%, #921E15 0%, rgba(146, 30, 21, 0.45) 60%, rgba(146, 30, 21, 0) 90%),
+                radial-gradient(circle at 15% 25%, #4B0E0A 0%, rgba(75, 14, 10, 0.55) 60%, rgba(75, 14, 10, 0) 90%),
+                linear-gradient(135deg, #4B0E0A, #921E15, #B2271B);
+            background-blend-mode: screen, overlay, soft-light, normal;
+            background-attachment: fixed;
         }
 
-        body.dark .topbar {
-            background-color: rgba(33, 33, 33, 0.95);
-            border-color: #444;
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        .brand-text {
+            font-family: 'Outfit', sans-serif;
         }
 
-        .logo {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: white;
+        .app-container {
+            width: 95%;
+            height: 95vh;
+            background-color: var(--surface-grey);
+            border-radius: var(--radius-xl);
             display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .logo::before {
-            content: "📊";
-            font-size: 1.5rem;
-        }
-
-        .right {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-        }
-
-        /* User profile section */
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-        }
-
-
-
-
-        .user-info {
-            line-height: 1.3;
-        }
-
-        .user-name {
-            font-weight: 600;
-            font-size: 1rem;
-        }
-
-        .date-time {
-            font-size: 0.8rem;
-            color: #666;
-            transition: var(--transition);
-        }
-
-        body.dark .date-time {
-            color: #aaa;
-        }
-
-        /* Theme toggle button */
-        .toggle-theme {
-            cursor: pointer;
-            background-color: #e9ecef;
-            padding: 0.5rem 1rem;
-            border-radius: 50px;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: var(--transition);
-            border: none;
-        }
-
-        body.dark .toggle-theme {
-            background-color: #495057;
-            color: var(--text-light);
-        }
-
-        .toggle-theme:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Menu icon */
-        .menu-icon {
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            padding: 0.5rem;
-            border-radius: 8px;
-            transition: var(--transition);
-        }
-
-        .menu-icon div {
-            width: 25px;
-            height: 3px;
-            background-color: var(--text-dark);
-            transition: var(--transition);
-        }
-
-        body.dark .menu-icon div {
-            background-color: var(--text-light);
-        }
-
-        .menu-icon:hover {
-            background-color: rgba(0, 0, 0, 0.05);
-        }
-
-        body.dark .menu-icon:hover {
-            background-color: rgba(255, 255, 255, 0.05);
-        }
-
-        /* Main content area */
-        .container {
-            display: flex;
-            flex-grow: 1;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
             position: relative;
         }
 
-        /* Sidebar */
+        /* SIDEBAR */
         .sidebar {
             width: 260px;
-            background-color: var(--sidebar-light);
-            backdrop-filter: blur(15px);
-            box-shadow: 2px 0 30px rgba(0, 0, 0, 0.1);
-            transform: translateX(-100%);
-            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            position: fixed;
+            background-color: var(--surface-white);
             height: 100%;
-            top: 80px;
-            bottom: 0;
-            left: 0;
-            z-index: 999;
-            overflow-y: auto;
-            gap: 1.5rem;
             padding: 2rem 1.5rem;
-            border-right: 1px solid rgba(90, 103, 216, 0.1);
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border-color);
+            z-index: 10;
         }
 
-
-
-
-        .sidebar.show {
-            transform: translateX(0);
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 3rem;
+            color: var(--primary-red);
+            font-size: 1.5rem;
+            font-weight: 700;
         }
 
-        .sidebar::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .sidebar::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .sidebar::-webkit-scrollbar-thumb {
-            background: rgba(90, 103, 216, 0.3);
-            border-radius: 3px;
-        }
-
-        .sidebar::-webkit-scrollbar-thumb:hover {
-            background: rgba(90, 103, 216, 0.5);
-        }
-
-        body.dark .sidebar {
-            background-color: #1E3E62;
-        }
-
-        .user-details {
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.8);
-            border-radius: 12px;
-            margin-bottom: 1rem;
-            margin-top: 1rem;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-            transition: var(--transition);
-            animation: slideInFromTop 0.6s ease-out;
-        }
-
-
-
-        body.dark .user-details {
-            background: rgba(15, 15, 16, 0.8);
-        }
-
-        .user-detail {
-            margin-bottom: 0.8rem;
-        }
-
-        .user-detail-label {
-            font-weight: 600;
-            margin-bottom: 0.3rem;
-            font-size: 0.85rem;
-            color: #555;
-        }
-
-        body.dark .user-detail-label {
-            color: #ccc;
-        }
-
-        .username-form {
-            margin-top: 0.5rem;
-        }
-
-        .username-form input {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .username-form button {
-            width: 100%;
-            padding: 0.5rem;
-            background-color: var(--success-color);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: var(--transition);
-        }
-
-        .username-form button:hover {
-            background-color: #0da372;
-        }
-
-        .nav-menu {
+        .nav-list {
+            list-style: none;
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
-        }
-
-        .nav-link {
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-            padding: 0.8rem 1rem;
-            border-radius: 8px;
-            color: var(--text-dark);
-            text-decoration: none;
-            transition: var(--transition);
-            font-weight: 500;
-        }
-
-        body.dark .nav-link {
-            color: var(--text-light);
-        }
-
-        .nav-link:hover {
-            background-color: rgba(67, 97, 238, 0.1);
-            color: var(--primary-color);
-        }
-
-        body.dark .nav-link:hover {
-            background-color: rgba(67, 97, 238, 0.2);
-        }
-
-        .nav-link.active {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        /* Main content */
-        .main-content {
             flex-grow: 1;
-            padding: 2rem;
-            margin-left: 0;
-            transition: var(--transition);
         }
 
-        .sidebar.show~.main-content {
-            margin-left: 260px;
-        }
-
-        /* Dashboard cards */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-top: 1rem;
-        }
-
-        .card {
-            background-color: #ffffff;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            padding: 1.5rem;
-            transition: var(--transition);
-            overflow: hidden;
-        }
-
-        body.dark .card {
-            background-color: var(--card-dark);
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .card-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: #000;
-        }
-
-        .card-icon {
-            width: 45px;
-            height: 45px;
-            background: linear-gradient(135deg, rgba(67, 97, 238, 0.2), rgba(58, 12, 163, 0.2));
-            border-radius: 12px;
+        .nav-item a {
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-        }
-
-        .card-content {
-            margin-bottom: 1.5rem;
-        }
-
-        .stat-value {
-            font-size: 2.2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-label {
-            font-size: 0.9rem;
-            color: #666;
-            transition: var(--transition);
-        }
-
-        body.dark .stat-label {
-            color: #aaa;
-        }
-
-        body.dark .card-title {
-            color: #fff;
-        }
-
-        .action-button {
-            display: block;
-            width: 100%;
-            padding: 0.8rem 1rem;
-            background-color: #5c6c7d;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: var(--transition);
-            text-align: center;
+            gap: 1rem;
+            padding: 1rem;
             text-decoration: none;
-            margin-top: 0.5rem;
+            color: var(--text-muted);
+            border-radius: var(--radius-m);
+            font-weight: 500;
+            transition: var(--transition);
+            cursor: pointer;
         }
 
-        .action-button:hover {
-            background-color: #1E3E62;
-            transform: translateY(-2px);
+        .nav-item a:hover {
+            background-color: #f3f4f6;
+            color: var(--primary-red);
         }
 
-        /* Progress bar */
-        .progress-container {
-            margin-top: 1.5rem;
+        .nav-item a.active {
+            background-color: var(--primary-red-light);
+            color: var(--primary-red);
         }
 
-        .progress-header {
+        /* MAIN CONTENT */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .top-header {
+            background-color: var(--surface-white);
+            padding: 1rem 2rem;
             display: flex;
             justify-content: space-between;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
         }
 
-        .progress-bar {
-            height: 10px;
-            width: 0%;
-            background-color: #e9ecef;
-            border-radius: 50px;
-            overflow: hidden;
+        .search-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f3f4f6;
+            padding: 0.5rem 0.9rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
         }
 
-        body.dark .progress-bar {
-            background-color: #444;
+        .search-bar input {
+            border: none;
+            background: transparent;
+            outline: none;
+            width: 220px;
         }
 
-        .progress-fill {
+        .content-scroll {
+            padding: 2rem;
+            overflow-y: auto;
             height: 100%;
-            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-            width: 75%;
-            border-radius: 50px;
-            transition: width 1s ease-in-out;
+            scroll-behavior: smooth;
         }
 
-        /* Welcome section */
-        .welcome-section {
+        /* STATS GRID */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 1.5rem;
             margin-bottom: 2rem;
         }
 
-        .welcome-heading {
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-
-        .welcome-subtext {
-            color: #666;
-            font-size: 1.1rem;
-        }
-
-        body.dark .welcome-subtext {
-            color: #aaa;
-        }
-
-        /* Responsive adjustments */
-        @media screen and (max-width: 992px) {
-            .sidebar.show~.main-content {
-                margin-left: 0;
-            }
-
-            .sidebar {
-                width: 100%;
-                max-width: 300px;
-            }
-        }
-
-        @media screen and (max-width: 768px) {
-            .topbar {
-                padding: 0.8rem 1.5rem;
-            }
-
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .welcome-heading {
-                font-size: 1.5rem;
-            }
-
-            .sidebar {
-                width: 100%;
-                max-width: 100%;
-            }
-        }
-
-        @media screen and (max-width: 576px) {
-            .right {
-                gap: 0.8rem;
-            }
-
-            .user-profile {
-                display: none;
-            }
-
-            .main-content {
-                padding: 1.5rem 1rem;
-            }
-        }
-
-        .progress-container {
-            width: 95%;
-            background-color: #eee;
-            margin-bottom: 15px;
-            border-radius: 5px;
-        }
-
-        .progress-bar {
-            height: 25px;
-            width: 0%;
-            background-color: #28a745;
-            text-align: center;
-            color: white;
-            border-radius: 5px;
-            transition: width 0.6s ease;
-        }
-
-        form {
-            margin-top: 20px;
-        }
-
-        .buttons {
-            margin-top: 20px;
-        }
-
-        input,
-        button {
-            padding: 10px;
-            font-size: 16px;
-        }
-
-        .submenu {
-            padding-top: 5px;
-        }
-
-        .submenu-item {
-            margin: 8px 0;
-            color: inherit;
-        }
-
-        .nav-link {
+        .stat-card {
+            background: var(--surface-white);
+            padding: 1.5rem;
+            border-radius: var(--radius-l);
+            box-shadow: var(--shadow-soft);
             display: flex;
             align-items: center;
-            gap: 8px;
-            text-decoration: none;
-            color: inherit;
-        }
-
-
-        .progress {
-            height: 10px;
-            background-color: #f1f1f1;
-            border-radius: 10px;
-        }
-
-        .progress-bar {
-            border-radius: 10px;
-        }
-
-        .form-label {
-            font-size: 14px;
-            font-weight: 500;
-            margin-bottom: 5px;
-            display: block;
-        }
-
-        h2 {
-            color: var(--primary-color);
-            margin-top: 0;
-            margin-bottom: 1.5rem;
-            font-weight: 600;
-            text-align: center;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: var(--dark-color);
-        }
-
-        input[type="date"],
-        input[type="time"] {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #ced4da;
-            border-radius: var(--border-radius);
-            background-color: var(--light-color);
-            font-size: 1rem;
-            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-        }
-
-        input:focus {
-            border-color: var(--primary-color);
-            outline: 0;
-            box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
-        }
-
-        .input-group {
-            position: relative;
-        }
-
-        .input-group-icon {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #6c757d;
-        }
-
-        .box {
-            max-width: 500px;
-            margin: 2rem auto;
-            padding: 2rem;
-            background-color: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            border-radius: 20px;
-        }
-
-
-        button {
-            display: block;
-            width: 100%;
-            padding: 0.75rem;
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: var(--border-radius);
-            font-size: 1rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.15s ease-in-out;
-        }
-
-        button:hover {
-            background-color: var(--secondary-color);
-        }
-
-        .btn-container {
-            display: flex;
             gap: 1rem;
-            margin-top: 1rem;
+            transition: var(--transition);
         }
 
-        .btn-reset {
-            background-color: #6c757d;
+        .stat-card:hover {
+            transform: translateY(-4px);
         }
 
-        .btn-reset:hover {
-            background-color: #5a6268;
-        }
-
-        .datetime-container {
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 16px;
             display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .datetime-container .form-group {
-            flex: 1;
-        }
-
-        .alert {
-            padding: 0.75rem;
-            margin-bottom: 1rem;
-            border-radius: var(--border-radius);
-            color: #0c5460;
-            background-color: #d1ecf1;
-            border: 1px solid #bee5eb;
-            display: none;
-        }
-
-        /* Calendar icon style */
-        .calendar-icon {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='currentColor' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z'/%3E%3C/svg%3E");
-        }
-
-        .clock-icon {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='currentColor' viewBox='0 0 16 16'%3E%3Cpath d='M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z'/%3E%3Cpath d='M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z'/%3E%3C/svg%3E");
-        }
-
-        .recurring-section {
-            margin-top: 1.5rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid #ced4da;
-        }
-
-        .checkbox-group {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            margin-bottom: 1rem;
-        }
-
-        .checkbox-group label {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            margin-bottom: 0;
-            padding: 0.5rem;
-            border: 1px solid #ced4da;
-            border-radius: var(--border-radius);
-            background-color: white;
-            flex: 1;
-            min-width: 60px;
             justify-content: center;
-            transition: all 0.3s ease;
+            align-items: center;
+            font-size: 1.2rem;
         }
 
-        .checkbox-group input[type="checkbox"] {
+        .icon-total {
+            background: #f3e8ff;
+            color: #9333ea;
+        }
+
+        .icon-cart {
+            background: #dbeafe;
+            color: #3b82f6;
+        }
+
+        .icon-cart-bad {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .icon-ann {
+            background: #dcfce7;
+            color: #22c55e;
+        }
+
+        .icon-bad {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+        .stat-info h3 {
+            font-size: 1.5rem;
+            color: var(--text-dark);
+            margin-bottom: 2px;
+        }
+
+        .stat-info p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* TABLES / CARDS */
+        .card-panel {
+            background: var(--surface-white);
+            border-radius: var(--radius-l);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-soft);
+            margin-bottom: 2rem;
+        }
+
+        .custom-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .custom-table th {
+            text-align: left;
+            padding: 1rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+
+        .custom-table td {
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-dark);
+            font-size: 0.9rem;
+        }
+
+        /* BADGES */
+        .badge {
+            padding: 0.25rem 0.6rem;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .badge-eligible {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-not-eligible {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-qualified {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-not-qualified {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-pending {
+            background: #fff7ed;
+            color: #c2410c;
+        }
+
+        .badge-approved {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .badge-rejected {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        /* VIEW SECTIONS */
+        .view-section {
             display: none;
+            animation: fadeIn 0.4s ease;
         }
 
-        .checkbox-group input[type="checkbox"]:checked+label {
-            background-color: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                margin: 1rem;
-                padding: 1.5rem;
-            }
-
-            .datetime-container {
-                flex-direction: column;
-                gap: 0;
-            }
+        .view-section.active {
+            display: block;
         }
 
         @keyframes fadeIn {
@@ -785,1177 +341,887 @@
             }
         }
 
-        .fade-in {
-            animation: fadeIn 0.6s ease-in-out;
-        }
-
-        /* Slide-in from left for sidebar */
-        @keyframes slideInLeft {
-            from {
-                transform: translateX(-100%);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        .sidebar.show {
-            animation: slideInLeft 0.4s ease forwards;
-        }
-
-        /* Button hover */
-        button.toggle-theme:hover,
-        .action-button:hover {
-            transform: scale(1.05);
-            transition: transform 0.2s ease-in-out;
-        }
-
-        /* Smooth transition */
-        .card,
-        .sidebar,
-        .main-content {
-            transition: all 0.3s ease-in-out;
-        }
-
-        /* ====== ATS-style dashboard layout ====== */
-        .ats-layout {
-            display: grid;
-            grid-template-columns: 260px minmax(0, 2fr) 320px;
-            gap: 1.5rem;
-            align-items: flex-start;
-        }
-
-        /* Collapse to 1 column on small screens */
-        @media (max-width: 1100px) {
-            .ats-layout {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Left Requests column */
-        .requests-panel {
-            background: #ffffff;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            padding: 1.25rem;
-        }
-
-        body.dark .requests-panel {
-            background: var(--card-dark);
-        }
-
-        .requests-header {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .requests-total {
-            font-size: 0.85rem;
-            color: #666;
-            margin-bottom: 1rem;
-        }
-
-        body.dark .requests-total {
-            color: #aaa;
-        }
-
-        .request-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0.75rem 0.9rem;
-            border-radius: 12px;
-            background: #f8fafc;
-            margin-bottom: 0.75rem;
-            cursor: pointer;
-            transition: var(--transition);
-            font-size: 0.9rem;
-        }
-
-        body.dark .request-item {
-            background: #1f2937;
-        }
-
-        .request-item-count {
+        .metric-big {
+            font-size: 2.5rem;
             font-weight: 700;
-            font-size: 1.1rem;
+            color: var(--primary-red);
         }
 
-        .request-item-label {
-            font-weight: 500;
-        }
-
-        /* Middle column */
-        .app-status-wrapper {
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 1.25rem 1.5rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            margin-bottom: 1.25rem;
-        }
-
-        body.dark .app-status-wrapper {
-            background: var(--card-dark);
-        }
-
-        .app-status-header {
-            font-weight: 600;
-            margin-bottom: 0.75rem;
-        }
-
-        .app-status-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 0.9rem;
-        }
-
-        .app-status-card {
-            border-radius: 14px;
-            padding: 0.9rem 1rem;
-            color: #111827;
-            font-size: 0.85rem;
-        }
-
-        .app-status-count {
-            font-size: 1.6rem;
-            font-weight: 700;
-            margin-top: 0.35rem;
-        }
-
-        /* different colors like in screenshot */
-        .status-new {
-            background: #fee2e2;
-        }
-
-        .status-qualified {
-            background: #e0ecff;
-        }
-
-        .status-scheduled {
-            background: #fef9c3;
-        }
-
-        .status-interviewed {
-            background: #e0f2fe;
-        }
-
-        .status-joined {
-            background: #dcfce7;
-        }
-
-        body.dark .status-new {
-            background: #7f1d1d;
-            color: #fef2f2;
-        }
-
-        body.dark .status-qualified {
-            background: #1d3557;
-            color: #e0ecff;
-        }
-
-        body.dark .status-scheduled {
-            background: #78350f;
-            color: #fef9c3;
-        }
-
-        body.dark .status-interviewed {
-            background: #082f49;
-            color: #e0f2fe;
-        }
-
-        body.dark .status-joined {
-            background: #064e3b;
-            color: #dcfce7;
-        }
-
-        /* Jobs overview */
-        .jobs-card {
-            background: #ffffff;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            padding: 1.25rem 1.5rem;
-        }
-
-        body.dark .jobs-card {
-            background: var(--card-dark);
-        }
-
-        .jobs-header-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-
-        .jobs-tabs {
-            display: inline-flex;
-            gap: 0.4rem;
-            background: #f3f4f6;
-            padding: 0.15rem;
-            border-radius: 999px;
-        }
-
-        .jobs-tab {
-            padding: 0.3rem 0.75rem;
-            border-radius: 999px;
-            font-size: 0.8rem;
-            cursor: pointer;
-        }
-
-        .jobs-tab.active {
-            background: #111827;
-            color: #fff;
-        }
-
-        body.dark .jobs-tabs {
-            background: #111827;
-        }
-
-        .jobs-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-        }
-
-        .jobs-table thead {
-            background: #f9fafb;
-        }
-
-        body.dark .jobs-table thead {
-            background: #111827;
-        }
-
-        .jobs-table th,
-        .jobs-table td {
-            padding: 0.55rem 0.4rem;
-            text-align: left;
-            white-space: nowrap;
-        }
-
-        .jobs-table tbody tr:nth-child(even) {
-            background: #f9fafb;
-        }
-
-        body.dark .jobs-table tbody tr:nth-child(even) {
-            background: #111827;
-        }
-
-        .badge-status {
-            padding: 0.15rem 0.6rem;
-            border-radius: 999px;
-            font-size: 0.7rem;
-            font-weight: 600;
-        }
-
-        .badge-in-progress {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .badge-hold {
-            background: #fef9c3;
-            color: #854d0e;
-        }
-
-        .badge-closed {
-            background: #e5e7eb;
-            color: #374151;
-        }
-
-        /* Right column – upcoming interviews */
-        .upcoming-card {
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 1.25rem 1.25rem 1rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        }
-
-        body.dark .upcoming-card {
-            background: var(--card-dark);
-        }
-
-        .upcoming-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.75rem;
-        }
-
-        .upcoming-total {
-            font-size: 0.8rem;
-            color: #6b7280;
-        }
-
-        body.dark .upcoming-total {
-            color: #9ca3af;
-        }
-
-        .upcoming-tabs {
-            display: flex;
-            gap: 0.4rem;
-            margin-bottom: 0.9rem;
-        }
-
-        .upcoming-tab {
-            flex: 1;
-            text-align: center;
-            padding: 0.25rem 0.4rem;
-            border-radius: 999px;
-            font-size: 0.78rem;
-            cursor: pointer;
-            background: #f3f4f6;
-        }
-
-        .upcoming-tab.active {
-            background: #111827;
-            color: #fff;
-        }
-
-        body.dark .upcoming-tab {
-            background: #111827;
-        }
-
-        .interview-item {
-            display: flex;
-            gap: 0.7rem;
-            margin-bottom: 0.8rem;
-            font-size: 0.8rem;
-        }
-
-        .interview-date-box {
-            min-width: 46px;
-            text-align: center;
-            border-radius: 10px;
-            background: #eff6ff;
-            padding: 0.3rem 0.4rem;
-        }
-
-        .interview-day {
-            font-size: 0.7rem;
-        }
-
-        .interview-date {
-            font-weight: 700;
-            font-size: 1rem;
-        }
-
-        .interview-body-title {
-            font-weight: 600;
-            margin-bottom: 0.15rem;
-            font-size: 0.8rem;
-        }
-
-        .interview-time {
-            font-size: 0.78rem;
-            color: #6b7280;
-        }
-
-        .btn-approve,
-        .btn-deny {
-            border: none;
-            border-radius: 999px;
-            padding: 0.3rem 0.8rem;
-            font-size: 0.75rem;
-            cursor: pointer;
-            margin: 0 2px;
-            transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.1s ease;
-        }
-
-        .btn-approve {
-            background: #16a34a;
-            color: #fff;
-        }
-
-        .btn-approve:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 6px rgba(22, 163, 74, 0.4);
-        }
-
-        .btn-deny {
-            background: #ef4444;
-            color: #fff;
-        }
-
-        .btn-deny:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
-        }
-
-        /* ===== Modal for job applicants ===== */
+        /* MODAL */
         .modal-overlay {
             position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.6);
-            display: flex;
-            align-items: center;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
             justify-content: center;
-            z-index: 2000;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
         }
 
         .modal-content {
-            background: #ffffff;
-            border-radius: 16px;
-            width: min(1000px, 95%);
+            background: white;
+            padding: 2rem;
+            border-radius: var(--radius-l);
+            width: 90%;
+            max-width: 900px;
             max-height: 85vh;
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-            animation: fadeIn 0.25s ease-out;
-        }
-
-        body.dark .modal-content {
-            background: #1f2937;
-            color: #f9fafb;
+            gap: 1.5rem;
         }
 
         .modal-header {
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid #e5e7eb;
+            align-items: flex-start;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
         }
 
-        body.dark .modal-header {
-            border-color: #374151;
+        .score-box {
+            background: var(--surface-grey);
+            padding: 1.5rem;
+            border-radius: var(--radius-m);
+            border: 1px solid var(--border-color);
         }
 
-        .modal-body {
-            padding: 1rem 1.5rem 1.25rem;
-            overflow-y: auto;
-        }
-
-        .modal-close {
-            border: none;
-            background: transparent;
-            font-size: 1.2rem;
-            cursor: pointer;
-            color: inherit;
-        }
-
-        .table-wrapper {
-            max-height: 60vh;
-            overflow: auto;
+        /* BUTTONS */
+        .btn-report {
+            background: white;
+            border: 1px solid var(--border-color);
+            padding: 8px 15px;
             border-radius: 8px;
-            border: 1px solid #e5e7eb;
-        }
-
-        .badge-qual {
-            padding: 2px 8px;
-            border-radius: 999px;
-            font-size: 11px;
-            font-weight: 600;
-            display: inline-block;
-        }
-
-        .badge-Approved {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .badge-Denied {
-            background: #fee2e2;
-            color: #b91c1c;
-        }
-
-        .badge-Qualified {
-            background: #e0f2fe;
-            color: #075985;
-        }
-
-        .badge-Pending {
-            background: #fef9c3;
-            color: #854d0e;
-        }
-
-        .btn-approve,
-        .btn-deny {
-            border: none;
-            border-radius: 999px;
-            padding: 0.25rem 0.7rem;
-            font-size: 0.75rem;
+            font-size: 0.85rem;
             cursor: pointer;
-            margin: 0 2px;
-            transition: 0.15s all;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-dark);
+            transition: var(--transition);
         }
 
-        .btn-approve {
-            background: #16a34a;
-            color: #fff;
+        .btn-report:hover {
+            background: var(--surface-grey);
+            border-color: var(--primary-red);
+            color: var(--primary-red);
         }
 
-        .btn-approve:hover {
-            background: #15803d;
-            transform: translateY(-1px);
-            box-shadow: 0 2px 6px rgba(22, 163, 74, 0.4);
+        .btn-primary {
+            background-color: var(--primary-red);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
         }
 
-        .btn-deny {
-            background: #ef4444;
-            color: #fff;
+        .btn-primary:hover {
+            background-color: var(--primary-red-dark);
         }
 
-        .btn-deny:hover {
-            background: #b91c1c;
-            transform: translateY(-1px);
-            box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        /* RECRUITMENT FORM STYLES */
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: -10px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            flex: 1 1 300px;
+            margin: 10px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--primary-red);
+            font-size: 0.9rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background-color: #fff;
+            transition: var(--transition);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-red);
+            box-shadow: 0 0 0 3px rgba(178, 39, 27, 0.1);
+        }
+
+        .section-title {
+            width: 100%;
+            font-size: 1.1rem;
+            color: var(--primary-red);
+            margin: 15px 10px 15px 10px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 5px;
+        }
+
+        .qa-section {
+            background: var(--surface-white);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-m);
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .qa-item {
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px dashed var(--border-color);
+        }
+
+        .qa-question {
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+            color: var(--text-dark);
+        }
+
+        .qa-answer {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 0.3rem;
+            font-style: italic;
+        }
+
+        .qa-score {
+            font-size: 0.8rem;
+            color: var(--primary-red);
+            font-weight: 600;
+        }
+
+        .progress-item {
+            margin-bottom: 15px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .progress-bar-bg {
+            height: 10px;
+            background-color: var(--border-color);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--primary-red);
+            border-radius: 5px;
+            transition: width 0.5s ease;
         }
     </style>
 </head>
 
 <body>
-    <!-- Top Navigation Bar -->
-    <header class="topbar">
-        <div class="logo">AceView</div>
-        <div class="right">
-            <div class="user-profile">
-                <div class="user-info">
-                    <div class="user-name">HR Manager</div>
-                    <div class="date-time" id="datetime"></div>
-                </div>
-                <button class="toggle-theme" onclick="toggleTheme()">
-                    <span id="theme-icon">🌓</span>
-                    <span id="theme-text">Theme</span>
-                </button>
+
+    <div class="app-container">
+        <aside class="sidebar" id="sidebar">
+            <div class="logo-area">
+                <i class="fa-solid fa-layer-group"></i>
+                <span class="brand-text">H2</span>
             </div>
-
-            <div class="menu-icon" onclick="toggleSidebar()">
-                <div></div>
-                <div></div>
-                <div></div>
-            </div>
-        </div>
-    </header>
-
-    <!-- Main Container -->
-    <div class="container">
-        <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
-            <div class="user-details">
-                <div class="user-detail">
-                    <div class="user-detail-label">Email</div>
-                    <div>{{ email }}</div>
-                </div>
-                <div class="user-detail">
-                    <div class="user-detail-label">Username</div>
-
-                    <div>{{ username }}</div>
-
-                </div>
-
-            </div>
-            <div class="nav-menu">
-                <a href="/hr" class="nav-link active">
-                    <span>📊</span> Dashboard
-                </a>
-                <a href="/viewapp" class="nav-link">
-                    <span>👥</span> Applicants
-                </a>
-                <a href="/viewchat" class="nav-link">
-                    <span>💬</span> Chat Interactions
-                </a>
-
-                <a href="/schedule" class="nav-link">
-                    <span>💬</span> Schedule
-                </a>
-
-                <div class="sidebar-item">
-                    <a href="javascript:void(0)" class="nav-link" onclick="toggleSettingsMenu()">
-                        <span>⚙️</span> Settings
+            <ul class="nav-list">
+                <li class="nav-item">
+                    <a onclick="switchTab('dashboard')" id="tab-dashboard" class="active">
+                        <i class="fa-solid fa-chart-pie"></i> Dashboard
                     </a>
-
-                    <!-- Submenu -->
-                    <div id="settings-submenu" class="submenu" style="display: none; margin-left: 20px;">
-                        <!-- Dark Mode Toggle -->
-
-
-                        <!-- Logout Link -->
-                        <div class="submenu-item">
-                            <a href="/logout" class="nav-link">🚪 Logout</a>
-                        </div>
-
-                    </div>
-                </div>
+                </li>
+                <li class="nav-item">
+                    <a onclick="switchTab('performance')" id="tab-performance">
+                        <i class="fa-solid fa-chart-line"></i> Performance
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a onclick="switchTab('analytics')" id="tab-analytics">
+                        <i class="fa-solid fa-wave-square"></i> Analytics
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a onclick="switchTab('recruitment')" id="tab-recruitment">
+                        <i class="fa-solid fa-briefcase"></i> Recruitment
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/schedule">
+                        <i class="fa-regular fa-calendar-check"></i> Schedule
+                    </a>
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a href="/logout" style="color: var(--primary-red);">
+                            <i class="fa-solid fa-right-from-bracket"></i> Logout
+                        </a>
+                    </li>
+                </ul>
             </div>
-        </div>
+        </aside>
 
-        <!-- Main Content Area -->
-        <div class="main-content">
-            <div class="welcome-section fade-in">
-                <h1 class="welcome-heading">Welcome back, HR Manager 👋</h1>
-                <p class="welcome-subtext">
-                    Here’s an overview of your hiring pipeline, applicants, and upcoming interviews.
-                </p>
-            </div>
-
-            <div class="ats-layout">
-                <!-- LEFT: Requests -->
-                <div class="requests-panel">
-                    <div class="requests-header">Requests</div>
-                    <div class="requests-total">
-                        Total request: {{ total_requests or 0 }}
-                    </div>
-
-                    <div class="request-item">
-                        <div>
-                            <div class="request-item-count">
-                                {{ single_hiring_requests or 0 }}
-                            </div>
-                            <div class="request-item-label">Single hiring request</div>
-                        </div>
-                    </div>
-
-                    <div class="request-item">
-                        <div>
-                            <div class="request-item-count">
-                                {{ modify_hiring_requests or 0 }}
-                            </div>
-                            <div class="request-item-label">Modify hiring request</div>
-                        </div>
-                    </div>
-
-                    <div class="request-item">
-                        <div>
-                            <div class="request-item-count">
-                                {{ assign_recruiter_requests or 0 }}
-                            </div>
-                            <div class="request-item-label">Assign recruiter</div>
-                        </div>
-                    </div>
-
-                    <div class="request-item">
-                        <div>
-                            <div class="request-item-count">
-                                {{ referral_bonus_requests or 0 }}
-                            </div>
-                            <div class="request-item-label">Referral bonus</div>
-                        </div>
-                    </div>
+        <main class="main-content">
+            <header class="top-header">
+                <div class="search-bar">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="Search system...">
                 </div>
+                <div style="text-align: right;">
+                    <div style="font-weight: 600; font-size: 0.9rem;">{{ username }}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">{{ email }}</div>
+                </div>
+            </header>
 
-                <!-- MIDDLE: Application status + Jobs overview -->
-                <div>
-                    <!-- Application status -->
-                    <div class="app-status-wrapper">
-                        <div class="app-status-header">Application status</div>
-                        <div class="app-status-cards">
-                            <div class="app-status-card status-new">
-                                <div>New applications</div>
-                                <div class="app-status-count">
-                                    {{ new_applications or applicant_count or 0 }}
-                                </div>
-                            </div>
-                            <div class="app-status-card status-qualified">
-                                <div>Qualified</div>
-                                <div class="app-status-count">
-                                    {{ qualified_applicants or 0 }}
-                                </div>
-                            </div>
-                            <div class="app-status-card status-scheduled">
-                                <div>Scheduled</div>
-                                <div class="app-status-count">
-                                    {{ scheduled_interviews or 0 }}
-                                </div>
-                            </div>
-                            <div class="app-status-card status-interviewed">
-                                <div>Interviewed</div>
-                                <div class="app-status-count">
-                                    {{ interviewed_applicants or 0 }}
-                                </div>
-                            </div>
-                            <div class="app-status-card status-joined">
-                                <div>Joined</div>
-                                <div class="app-status-count">
-                                    {{ hired_applicants or 0 }}
-                                </div>
+            <div class="content-scroll">
+
+                <!-- DASHBOARD TAB -->
+                <div id="view-dashboard" class="view-section active">
+                    <div class="welcome-text" style="margin-bottom: 2rem;">
+                        <h1>HR Dashboard Overview</h1>
+                        <p style="color:var(--text-muted);">
+                            Aggregated applicant results from prescreening and interview scoring.
+                        </p>
+                    </div>
+
+                    <!-- Top cards -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon icon-total"><i class="fa-solid fa-users"></i></div>
+                            <div class="stat-info">
+                                <h3>{{ total_requests }}</h3>
+                                <p>Total Applicants</p>
                             </div>
                         </div>
-                    </div>
-                    <!-- Job Applicants Modal -->
-                    <div id="jobApplicantsModal" class="modal-overlay" style="display:none;">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h2 id="modalJobTitle">Job applicants</h2>
-                                <button type="button" class="modal-close" onclick="closeJobApplicantsModal()">✕</button>
+                        <div class="stat-card">
+                            <div class="stat-icon icon-cart"><i class="fa-solid fa-filter"></i></div>
+                            <div class="stat-info">
+                                <h3>{{ cart_eligible }}</h3>
+                                <p> Prescreening Eligible</p>
                             </div>
-                            <div class="modal-body">
-                                <div class="search-box" style="margin-bottom:10px;">
-                                    <input type="text" id="modalSearchInput"
-                                        placeholder="Search by name, email, or status..."
-                                        onkeyup="filterModalApplicants()">
-                                </div>
-
-                                <div class="table-wrapper">
-                                    <table class="jobs-table" id="jobApplicantsTable">
-                                        <thead>
-                                            <tr>
-                                                <th>Name</th>
-                                                <th>Contact</th>
-                                                <th>Experience</th>
-                                                <th>Education</th>
-                                                <th>Level</th>
-                                                <th>Qualified</th>
-                                                <th>Confidence</th>
-                                                <th>Eligibility</th>
-                                                <th>Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="modalApplicantsBody">
-                                            <!-- filled by JS -->
-                                        </tbody>
-                                    </table>
-                                </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon icon-cart-bad"><i class="fa-solid fa-filter-circle-xmark"></i></div>
+                            <div class="stat-info">
+                                <h3>{{ cart_not_eligible }}</h3>
+                                <p>Prescreening Not Eligible</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon icon-ann"><i class="fa-solid fa-check-double"></i></div>
+                            <div class="stat-info">
+                                <h3>{{ ann_qualified }}</h3>
+                                <p>Chatbot Interview Qualified</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon icon-bad"><i class="fa-solid fa-ban"></i></div>
+                            <div class="stat-info">
+                                <h3>{{ ann_not_qualified }}</h3>
+                                <p>Chatbot Interview Not Qualified</p>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Jobs overview -->
-                    <div class="jobs-card">
-                        <div class="jobs-header-row">
+                    <!-- Applicant List -->
+                    <div class="card-panel">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:1.5rem;">
                             <div>
-                                <div class="card-title">Jobs overview</div>
-                                <div class="stat-label">Open positions and time to hire</div>
+                                <h3>Applicant List with prescreening & chatbot interview Results</h3>
+                                <p style="font-size:0.8rem; color:var(--text-muted);">
+                                    Captures applicant name, role, Prescreening result, Chatbot Interview result, HR
+                                    decision, final score,
+                                    and application date.
+                                </p>
                             </div>
-                            <div class="jobs-tabs">
-                                <div class="jobs-tab active">Ongoing</div>
-                                <div class="jobs-tab">Review &amp; publish</div>
-                            </div>
+                            <button class="btn-report"><i class="fa-solid fa-download"></i> Export Data</button>
                         </div>
-
-                        <table class="jobs-table">
+                        <table class="custom-table">
                             <thead>
                                 <tr>
-                                    <th>Job role</th>
-                                    <th>Deadline</th>
-                                    <th>Status</th>
-                                    <th>Openings</th>
-                                    <th>Closed</th>
+                                    <th>Applicant</th>
+                                    <th>Role</th>
+                                    <th>Pre-screening</th>
+                                    <th>Chatbot Interview</th>
+                                    <th>HR Decision</th>
+                                    <th>Final Score</th>
+                                    <th>Application Date</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for job in jobs %}
+                                {% for app in recent_applicants %}
                                 <tr>
                                     <td>
-                                        <!-- Clickable job name -->
-                                        <a href="javascript:void(0)" onclick="openJobApplicantsModal('{{ job.title }}')"
-                                            style="text-decoration:none; color:inherit; font-weight:600;">
-                                            {{ job.title }}
-                                        </a><br>
-                                        <span class="stat-label" style="font-size: 0.75rem;">
-                                            {{ job.applicants }} applicants
+                                        <strong>{{ app.name }}</strong><br>
+                                        <small style="color:#999">{{ app.email }}</small>
+                                    </td>
+                                    <td>{{ app.role }}</td>
+                                    <td>
+                                        <span
+                                            class="badge {% if app.cart_status == 'Eligible' %}badge-eligible{% else %}badge-not-eligible{% endif %}">
+                                            {{ app.cart_status or 'N/A' }}
                                         </span>
                                     </td>
-                                    <td>{{ job.deadline }}</td>
                                     <td>
-                                        <span class="badge-status
-                        {% if job.status == 'In progress' %}badge-in-progress
-                        {% elif job.status == 'On hold' %}badge-hold
-                        {% else %}badge-closed{% endif %}">
-                                            {{ job.status }}
-                                        </span>
-                                        {% if job.decision %}
-                                        <div style="font-size: 0.7rem; margin-top: 2px;">
-                                            Decision: {{ job.decision|capitalize }}
-                                        </div>
+                                        {% if app.ann_status == 'Qualified' %}
+                                        <span class="badge badge-qualified">{{ app.ann_status }}</span>
+                                        {% elif app.ann_status == 'Not Qualified' %}
+                                        <span class="badge badge-not-qualified">{{ app.ann_status }}</span>
                                         {% else %}
-                                        <div style="font-size: 0.7rem; margin-top: 2px;">
-                                            Decision: Open
-                                        </div>
+                                        <span class="badge badge-pending">{{ app.ann_status }}</span>
                                         {% endif %}
                                     </td>
-                                    <td>{{ job.openings }}</td>
-                                    <td>{{ job.closed }}</td>
-
+                                    <td>
+                                        {% if app.hr_status == 'Approved' %}
+                                        <span class="badge badge-approved">{{ app.hr_status }}</span>
+                                        {% elif app.hr_status == 'Rejected' %}
+                                        <span class="badge badge-rejected">{{ app.hr_status }}</span>
+                                        {% else %}
+                                        <span class="badge badge-pending">{{ app.hr_status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ "%.1f"|format(app.score|float * 100) }}%</td>
+                                    <td>
+                                        {% if app.applied_date %}
+                                        {{ app.applied_date.strftime("%Y-%m-%d") }}
+                                        {% else %}-{% endif %}
+                                    </td>
+                                    <td>
+                                        <button class="btn-report" onclick="fetchAndOpenModal({{ app.id }})">
+                                            View Report
+                                        </button>
+                                    </td>
                                 </tr>
                                 {% else %}
                                 <tr>
-                                    <td colspan="6">No job postings yet.</td>
+                                    <td colspan="8">No applicants found in the database.</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
-
-
                 </div>
 
-                <!-- RIGHT: Upcoming interviews -->
-                <div class="upcoming-card">
-                    <div class="upcoming-header">
-                        <div>
-                            <div class="card-title" style="font-size:1rem;">Upcoming interview</div>
-                            <div class="upcoming-total">
-                                Total interview: {{ upcoming_interviews|length if upcoming_interviews else 0 }}
-                            </div>
-                        </div>
-                        <a href="/schedule" class="stat-label" style="font-size:0.8rem;">View all</a>
+                <!-- PERFORMANCE TAB (SOP 3: charts + relationship table) -->
+                <div id="view-performance" class="view-section">
+                    <div class="welcome-text" style="margin-bottom: 2rem;">
+                        <h1>Model Performance Overview</h1>
+                        <p style="color:var(--text-muted);">
+                            High-level distribution of Pre-screening eligibility and Chatbot Interview qualification
+                            results.
+                        </p>
                     </div>
 
-                    <div class="upcoming-tabs">
-                        <div class="upcoming-tab active">Assigned to me</div>
-                        <div class="upcoming-tab">All</div>
+                    <div style="display:grid; grid-template-columns:1.2fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+                        <div class="card-panel">
+                            <h3>Summary of Prescreening & Chatbot Interview Outcomes</h3>
+                            <table class="custom-table">
+                                <thead>
+                                    <tr>
+                                        <th>Model Used</th>
+                                        <th>Total Applicants</th>
+                                        <th>Positive Result</th>
+                                        <th>Negative Result</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Prescreening</td>
+                                        <td>{{ total_requests }}</td>
+                                        <td>Eligible: {{ cart_eligible }}</td>
+                                        <td>Not Eligible: {{ cart_not_eligible }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Chatbot Interview Scoring</td>
+                                        <td>{{ total_requests }}</td>
+                                        <td>Qualified: {{ ann_qualified }}</td>
+                                        <td>Not Qualified: {{ ann_not_qualified }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="card-panel">
+                            <h3>Bar Chart of Positive / Negative Results</h3>
+                            <div style="display:flex; flex-direction:column; gap:20px;">
+                                <div>
+                                    <h4 style="font-size:0.9rem; margin-bottom:4px;">Pre-screening: Eligible vs Not
+                                        Eligible</h4>
+                                    <canvas id="cartChart" height="140"></canvas>
+                                </div>
+                                <div>
+                                    <h4 style="font-size:0.9rem; margin-bottom:4px;">Chatbot Interview: Qualified vs Not
+                                        Qualified
+                                    </h4>
+                                    <canvas id="annChart" height="140"></canvas>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    {% for i in upcoming_interviews %}
-                    <div class="interview-item">
-                        <div class="interview-date-box">
-                            <div class="interview-day">{{ i.date_str_short }}</div>
-                            <div class="interview-date">{{ i.day }}</div>
+                    <div class="card-panel">
+                        <h3>Relationship Between Pre-Screening Eligibility and Chatbot Interview Qualification</h3>
+                        <table class="custom-table">
+                            <thead>
+                                <tr>
+                                    <th>Outcome</th>
+                                    <th>Applicants</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Eligible → Qualified</td>
+                                    <td>{{ cart_ann_matrix.eligible_qualified }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Eligible → Not Qualified</td>
+                                    <td>{{ cart_ann_matrix.eligible_not_qualified }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Not Eligible → Qualified</td>
+                                    <td>{{ cart_ann_matrix.not_eligible_qualified }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Not Eligible → Not Qualified</td>
+                                    <td>{{ cart_ann_matrix.not_eligible_not_qualified }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ANALYTICS TAB (SOP 4: confusion matrix, accuracy, error) -->
+                <div id="view-analytics" class="view-section">
+                    <div class="welcome-text" style="margin-bottom: 2rem;">
+                        <h1>Analytics & Evaluation Metrics</h1>
+                        <p style="color:var(--text-muted);">
+                            Confusion matrices, accuracy, and percent error for CART and ANN models.
+                        </p>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+                        <div class="card-panel">
+                            <h3>CART Confusion Matrix (vs ANN final outcome)</h3>
+                            <table class="custom-table">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th colspan="2">Actual (ANN)</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Predicted (CART)</th>
+                                        <th>Qualified</th>
+                                        <th>Not Qualified</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Eligible</td>
+                                        <td>{{ cart_metrics.tp }}</td>
+                                        <td>{{ cart_metrics.fp }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Not Eligible</td>
+                                        <td>{{ cart_metrics.fn }}</td>
+                                        <td>{{ cart_metrics.tn }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <p style="font-size:0.8rem; margin-top:8px; color:var(--text-muted);">
+                                Accuracy: {{ (cart_metrics.accuracy * 100) | round(2) }}% &nbsp; | &nbsp;
+                                Percent Error: {{ (cart_metrics.error_rate * 100) | round(2) }}%
+                            </p>
                         </div>
-                        <div>
-                            <div class="interview-time">
-                                {{ i.start_time }} – {{ i.end_time }}
-                            </div>
-                            <div class="interview-body-title">
-                                {{ i.position }} – {{ i.department }}
-                            </div>
-                            <div class="stat-label" style="font-size:0.78rem;">
-                                {{ i.candidate_name }}
-                            </div>
+
+                        <div class="card-panel">
+                            <h3>ANN Confusion Matrix (vs HR Decision)</h3>
+                            <table class="custom-table">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th colspan="2">Actual (HR)</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Predicted (ANN)</th>
+                                        <th>Approved</th>
+                                        <th>Rejected</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Qualified</td>
+                                        <td>{{ ann_metrics.tp }}</td>
+                                        <td>{{ ann_metrics.fp }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Not Qualified</td>
+                                        <td>{{ ann_metrics.fn }}</td>
+                                        <td>{{ ann_metrics.tn }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <p style="font-size:0.8rem; margin-top:8px; color:var(--text-muted);">
+                                Accuracy: {{ (ann_metrics.accuracy * 100) | round(2) }}% &nbsp; | &nbsp;
+                                Percent Error: {{ (ann_metrics.error_rate * 100) | round(2) }}%
+                            </p>
                         </div>
                     </div>
-                    {% else %}
-                    <p class="stat-label" style="font-size:0.85rem;">
-                        No upcoming interviews scheduled.
-                    </p>
-                    {% endfor %}
+
+                    <div class="card-panel">
+                        <h3>Accuracy Comparison of CART and ANN</h3>
+                        <canvas id="accuracyChart" height="140"></canvas>
+                    </div>
+                </div>
+
+                <!-- RECRUITMENT TAB -->
+                <div id="view-recruitment" class="view-section">
+                    <div class="welcome-text" style="margin-bottom: 2rem;">
+                        <h1>Recruitment Management</h1>
+                        <p style="color:var(--text-muted);">
+                            Manage position requirements and set applicant limits.
+                        </p>
+                    </div>
+
+                    <div class="card-panel">
+                        <h2
+                            style="font-size:1.2rem; color:var(--primary-red); margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:5px;">
+                            Current Applicant Progress
+                        </h2>
+                        <div id="bars" class="progress-section">
+                            {% if progress_data %}
+                            {% for item in progress_data %}
+                            <div class="progress-item">
+                                <div class="progress-header">
+                                    <span class="progress-title">{{ item.position }}</span>
+                                    <span class="progress-count">{{ item.current }}/{{ item.max_allowed }}</span>
+                                </div>
+                                <div class="progress-bar-bg">
+                                    <div class="progress-fill" style="width: {{ item.percent }}%;"></div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <p style="color:#999;">No progress data available.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="card-panel">
+                        <h2
+                            style="font-size:1.2rem; color:var(--primary-red); margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:5px;">
+                            Set Max Application Limits
+                        </h2>
+                        <form action="{{ url_for('schedule.set_pax') }}" method="POST">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label" for="position_limit">Select Position</label>
+                                    <select name="position" id="position_limit" class="form-control">
+                                        <option value="Business Analyst">Business Analyst</option>
+                                        <option value="Project Analyst">Project Analyst</option>
+                                        <option value="Java Developer">Java Developer</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label" for="max_allowed_limit">Max Applicants</label>
+                                    <input type="number" id="max_allowed_limit" name="max_allowed" min="1"
+                                        class="form-control">
+                                </div>
+                            </div>
+
+                            <div class="btn-group">
+                                <button type="submit" class="btn-primary">Set Limit</button>
+                            </div>
+
+                    </div>
+
+                </div>
+        </main>
+    </div>
+
+    <!-- MODAL -->
+    <div id="applicantDetailModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h2 id="modalName">Applicant Name</h2>
+                    <span id="modalRole" style="font-size:0.85rem; color:var(--text-muted);">Role</span>
+                </div>
+                <button class="btn-close" onclick="closeDetailModal()"
+                    style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+                <div class="score-box">
+                    <h4>Prescreening Outcome</h4>
+                    <div class="metric-big" style="color:#3b82f6;" id="modalCartStatus">Eligible</div>
+                    <p id="modalExperience">Experience: 0 yrs</p>
+                    <p id="modalSkills">Skills: None</p>
+                </div>
+                <div class="score-box">
+                    <h4>ANN Interview Evaluation</h4>
+                    <div class="metric-big" id="modalAnnStatus">Qualified</div>
+                    <p id="modalScore">Avg Score: 0%</p>
+                </div>
+            </div>
+            <div id="qaContainer">
+                <h3 style="margin-top:1.5rem; margin-bottom:1rem;">Detailed Interview Q&amp;A</h3>
+                <div id="qaList" class="qa-section">
+                    <div style="text-align:center;">Loading...</div>
+                </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:1rem; gap:10px;">
+                <div>
+                    <button class="btn-report" id="emailContactBtn" type="button">
+                        <i class="fa-solid fa-envelope"></i> Contact Applicant
+                    </button>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-report" style="border-color:#22c55e; color:#22c55e;" type="button"
+                        onclick="sendDecision('approve')">
+                        <i class="fa-solid fa-check"></i> Approve &amp; Email
+                    </button>
+                    <button class="btn-report" style="border-color:#ef4444; color:#ef4444;" type="button"
+                        onclick="sendDecision('reject')">
+                        <i class="fa-solid fa-xmark"></i> Reject &amp; Email
+                    </button>
+                    <button class="btn-report" style="color:#6b7280; border-color:#d1d5db;" type="button"
+                        onclick="closeDetailModal()">
+                        Close
+                    </button>
                 </div>
             </div>
         </div>
+    </div>
 
-        </script>
+    <script>
+        let currentApplicantId = null;
+        let currentApplicantEmail = null;
 
+        function switchTab(tabName) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item a').forEach(el => el.classList.remove('active'));
 
-        <script>
-            // Update date and time
-            function updateDateTime() {
-                const now = new Date();
-                const options = {
-                    weekday: 'short',
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                };
-                const dateTime = now.toLocaleDateString('en-US', options);
-                document.getElementById('datetime').textContent = dateTime;
-            }
+            const view = document.getElementById('view-' + tabName);
+            if (view) view.classList.add('active');
 
+            const tab = document.getElementById('tab-' + tabName);
+            if (tab) tab.classList.add('active');
+        }
 
+        function fetchAndOpenModal(id) {
+            document.getElementById('applicantDetailModal').style.display = 'flex';
+            document.getElementById('qaList').innerHTML = '<div style="text-align:center;">Loading...</div>';
 
-            // Toggle the submenu visibility
-            function toggleSettingsMenu() {
-                const submenu = document.getElementById("settings-submenu");
-                submenu.style.display = submenu.style.display === "none" ? "block" : "none";
-            }
-
-            // Load theme preference on page load
-            function loadThemePreference() {
-                const savedTheme = localStorage.getItem('theme');
-
-                if (savedTheme === 'dark') {
-                    document.body.classList.add('dark');
-                    document.getElementById('theme-icon').textContent = '☀️';
-                    document.getElementById('theme-text').textContent = 'Light';
-                    document.getElementById('darkToggle').checked = true;
-                } else {
-                    document.getElementById('theme-icon').textContent = '🌙';
-                    document.getElementById('theme-text').textContent = 'Dark';
-                    document.getElementById('darkToggle').checked = false;
-                }
-            }
-
-            // Toggle dark/light theme
-            function toggleTheme() {
-                const isDark = document.body.classList.toggle('dark');
-                localStorage.setItem('theme', isDark ? 'dark' : 'light');
-                loadThemePreference();
-            }
-
-            // Run on page load
-            window.onload = loadThemePreference;
-
-
-
-            // Toggle sidebar visibility
-            function toggleSidebar() {
-                document.getElementById('sidebar').classList.toggle('show');
-            }
-
-            // Check saved theme preference
-            function loadThemePreference() {
-                const savedTheme = localStorage.getItem('theme');
-
-                if (savedTheme === 'dark') {
-                    document.body.classList.add('dark');
-                    document.getElementById('theme-icon').textContent = '☀️';
-                    document.getElementById('theme-text').textContent = 'Light';
-                } else {
-                    document.getElementById('theme-icon').textContent = '🌙';
-                    document.getElementById('theme-text').textContent = 'Dark';
-                }
-            }
-
-            // Initialize
-            document.addEventListener('DOMContentLoaded', function () {
-                // Function to update all position progress bars
-                function updateAllProgressBars() {
-                    // Get all positions from your data
-                    const positions = [
-                        'Business Analyst',
-                        'Project Analyst',
-                        'Java Developer'
-                        // Add any other positions you have
-                    ];
-
-                    // Update each position's progress bar
-                    positions.forEach(function (position) {
-                        fetch(`/update_position/${encodeURIComponent(position)}`)
-                            .then(response => response.json())
-                            .then(data => {
-                                // Find the progress bar for this position
-                                const progressBars = document.querySelectorAll('.position-progress');
-                                progressBars.forEach(function (progressBar) {
-                                    // Check if this is the correct position
-                                    const positionText = progressBar.querySelector('p').textContent;
-                                    if (positionText.includes(position)) {
-                                        // Update the progress bar
-                                        const barElement = progressBar.querySelector('.progress-bar');
-                                        barElement.style.width = data.percentage + '%';
-                                        barElement.textContent = data.percentage.toFixed(2) + '%';
-
-                                        // Update the count text
-                                        const countElement = progressBar.querySelector('p');
-                                        countElement.textContent = `${position}: ${data.current}/${data.max}`;
-                                    }
-                                });
-                            })
-                            .catch(error => console.error('Error updating progress bar:', error));
-                    });
-                }
-
-                // Update progress bars on page load
-                updateAllProgressBars();
-
-                // Update progress bars every 30 seconds
-                setInterval(updateAllProgressBars, 30000);
-            });
-
-
-
-            function applyForPosition(position) {
-                fetch('/apply', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'pre-screening/json',
-                    },
-                    body: JSON.stringify({
-                        position: position
-                    }),
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log(data.message);
-                    });
-            }
-
-            const positions = [
-                "Software Engineer",
-                "Data Analyst",
-                "Web Developer",
-                "Data Scientist",
-                "Network Engineer",
-                "System Administrator",
-                "AI Engineer"
-            ];
-
-
-
-            //applicantion form
-
-
-            function loadAllProgressBars() {
-                positions.forEach(position => {
-                    fetch(`/update_position/${encodeURIComponent(position)}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            const percent = data.percentage;
-                            const bar = document.getElementById("progress-" + position);
-                            bar.style.width = percent + "%";
-                            bar.innerText = percent + "%";
-                        });
-                });
-            }
-
-        </script>
-
-        <script>
-            // ===== MODAL LOGIC =====
-            let currentModalPosition = null; // remember which job is open
-
-            function openJobApplicantsModal(position) {
-                currentModalPosition = position;
-                document.getElementById('modalJobTitle').textContent =
-                    position + ' – Applicants';
-
-                const modal = document.getElementById('jobApplicantsModal');
-                modal.style.display = 'flex';
-
-                // Clear previous rows
-                const tbody = document.getElementById('modalApplicantsBody');
-                tbody.innerHTML = '<tr><td colspan="9">Loading...</td></tr>';
-
-                // Fetch applicants for this position as JSON
-                fetch(`/job/${encodeURIComponent(position)}?modal=1`)
-                    .then(res => res.json())
-                    .then(data => {
-                        tbody.innerHTML = '';
-                        if (!data.applicants || data.applicants.length === 0) {
-                            tbody.innerHTML =
-                                '<tr><td colspan="9">No applicants for this position yet.</td></tr>';
-                            return;
-                        }
-
-                        data.applicants.forEach(a => {
-                            const tr = document.createElement('tr');
-
-                            const qualifiedClass = 'badge-' + (a.qualified || 'Pending');
-
-                            tr.innerHTML = `
-                        <td>
-                            <strong>${escapeHtml(a.name)}</strong><br>
-                            <span style="font-size:11px; color:#6b7280;">
-                                ${escapeHtml(a.email)}
-                            </span>
-                        </td>
-                        <td>${escapeHtml(a.contact || '')}</td>
-                        <td>${a.experience || 0} yrs</td>
-                        <td>${escapeHtml(a.education_level || '—')}</td>
-                        <td>${escapeHtml(a.level || '—')}</td>
-                        <td>
-                            <span class="badge-qual ${qualifiedClass}">
-                                ${escapeHtml(a.qualified || 'Pending')}
-                            </span>
-                        </td>
-                        <td>${a.confidence || 0}%</td>
-                        <td>${escapeHtml(a.eligibility || '')}</td>
-                        <td>
-                            <button class="btn-approve"
-                                    onclick="decideApplicant(${a.id}, 'approve')">
-                                Approve
-                            </button>
-                            <button class="btn-deny"
-                                    onclick="decideApplicant(${a.id}, 'deny')">
-                                Deny
-                            </button>
-                        </td>
-                    `;
-                            tbody.appendChild(tr);
-                        });
-                    })
-                    .catch(err => {
-                        console.error(err);
-                        tbody.innerHTML =
-                            '<tr><td colspan="9">Error loading applicants.</td></tr>';
-                    });
-            }
-
-            function closeJobApplicantsModal() {
-                document.getElementById('jobApplicantsModal').style.display = 'none';
-                currentModalPosition = null;
-            }
-
-            // Basic HTML escaping for safety
-            function escapeHtml(str) {
-                if (str === null || str === undefined) return '';
-                return String(str)
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#039;');
-            }
-
-            // Filter rows in modal table
-            function filterModalApplicants() {
-                const input = document.getElementById('modalSearchInput');
-                const filter = input.value.toUpperCase();
-                const table = document.getElementById('jobApplicantsTable');
-                const tbody = table.getElementsByTagName('tbody')[0];
-                const rows = tbody.getElementsByTagName('tr');
-
-                for (let i = 0; i < rows.length; i++) {
-                    const cells = rows[i].getElementsByTagName('td');
-                    let found = false;
-
-                    for (let j = 0; j < cells.length - 1; j++) { // ignore Action col
-                        const cell = cells[j];
-                        if (cell) {
-                            const txt = cell.textContent || cell.innerText;
-                            if (txt.toUpperCase().indexOf(filter) > -1) {
-                                found = true;
-                                break;
-                            }
-                        }
+            fetch('/applicant-details/' + id)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                        return;
                     }
-                    rows[i].style.display = found ? '' : 'none';
-                }
-            }
 
-            // Approve / Deny via JSON
-            function decideApplicant(applicantId, decision) {
-                if (!currentModalPosition) return;
+                    currentApplicantId = id;
+                    currentApplicantEmail = data.email || null;
 
-                fetch('/applicant-decision-json', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        applicant_id: applicantId,
-                        decision: decision,
-                        position: currentModalPosition
-                    })
+                    document.getElementById('modalName').textContent = data.name;
+                    document.getElementById('modalRole').textContent = data.role;
+                    document.getElementById('modalCartStatus').textContent = data.cart_status;
+                    document.getElementById('modalExperience').textContent = "Experience: " + data.experience + " yrs";
+                    document.getElementById('modalSkills').textContent = "Skills: " + (data.skills || "N/A");
+
+                    const annEl = document.getElementById('modalAnnStatus');
+                    annEl.textContent = data.ann_status;
+                    annEl.style.color = (data.ann_status === 'Not Qualified') ? '#ef4444' : '#22c55e';
+                    document.getElementById('modalScore').textContent =
+                        "Avg Score: " + (parseFloat(data.ann_score) * 100).toFixed(1) + "%";
+
+                    const qaList = document.getElementById('qaList');
+                    qaList.innerHTML = '';
+                    let qaData = [];
+                    try {
+                        qaData = typeof data.qa_data === 'string' ? JSON.parse(data.qa_data) : data.qa_data;
+                    } catch (e) {
+                        console.error("QA parse error:", e);
+                    }
+
+                    if (Array.isArray(qaData) && qaData.length > 0) {
+                        qaData.forEach((item, index) => {
+                            const div = document.createElement('div');
+                            div.className = 'qa-item';
+                            div.innerHTML = `
+                            <div class="qa-question">Q${index + 1}: ${item.question || "Question"}</div>
+                            <div class="qa-answer">"${item.answer || "No answer"}"</div>
+                            <div class="qa-score">Recorded</div>
+                        `;
+                            qaList.appendChild(div);
+                        });
+                    } else {
+                        qaList.innerHTML = '<div style="text-align:center; color:#999;">No data found.</div>';
+                    }
+
+                    const emailBtn = document.getElementById('emailContactBtn');
+                    if (emailBtn && currentApplicantEmail) {
+                        emailBtn.onclick = function () {
+                            window.location.href = 'mailto:' + currentApplicantEmail;
+                        };
+                    }
                 })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (!data.ok) {
-                            console.error(data);
-                            alert('Error updating applicant decision.');
-                            return;
-                        }
+                .catch(err => {
+                    console.error(err);
+                    document.getElementById('qaList').innerHTML = 'Error.';
+                });
+        }
 
-                        // Update badge text in the row
-                        const tbody = document.getElementById('modalApplicantsBody');
-                        const rows = tbody.getElementsByTagName('tr');
+        function closeDetailModal() {
+            document.getElementById('applicantDetailModal').style.display = 'none';
+        }
 
-                        for (let i = 0; i < rows.length; i++) {
-                            const row = rows[i];
-                            // id is only in onclick, so we just refetch modal after change
-                        }
+        window.onclick = function (e) {
+            if (e.target === document.getElementById('applicantDetailModal')) closeDetailModal();
+        }
 
-                        // simplest: reload the modal data to reflect changes
-                        openJobApplicantsModal(currentModalPosition);
-                    })
-                    .catch(err => {
-                        console.error(err);
-                        alert('Error updating applicant decision.');
-                    });
+        function sendDecision(decision) {
+            if (!currentApplicantId) {
+                alert("No applicant selected.");
+                return;
             }
 
-            // Close modal when clicking outside content
-            window.addEventListener('click', function (e) {
-                const modal = document.getElementById('jobApplicantsModal');
-                if (modal.style.display === 'flex' &&
-                    e.target === modal) {
-                    closeJobApplicantsModal();
+            if (!confirm(`Are you sure you want to ${decision === 'approve' ? 'APPROVE' : 'REJECT'} this applicant?`)) {
+                return;
+            }
+
+            fetch('/applicant-decision-json', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    applicant_id: currentApplicantId,
+                    decision: decision
+                })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.ok) {
+                        alert("Status updated and email processed.");
+                        closeDetailModal();
+                        window.location.reload();
+                    } else {
+                        alert(data.msg || "Error updating applicant.");
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("Network error while updating applicant.");
+                });
+        }
+
+        // Chart.js initialisation
+        document.addEventListener('DOMContentLoaded', function () {
+            const cartEligible = {{ cart_eligible | default (0)
+        }};
+        const cartNotEligible = {{ cart_not_eligible | default (0) }};
+        const annQualified = {{ ann_qualified | default (0) }};
+        const annNotQualified = {{ ann_not_qualified | default (0) }};
+
+        const cartCtx = document.getElementById('cartChart');
+        if (cartCtx) {
+            new Chart(cartCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Eligible', 'Not Eligible'],
+                    datasets: [{
+                        label: 'Applicants',
+                        data: [cartEligible, cartNotEligible],
+                        backgroundColor: ['#60a5fa', '#fecaca'],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
                 }
             });
-        </script>
+        }
+
+        const annCtx = document.getElementById('annChart');
+        if (annCtx) {
+            new Chart(annCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Qualified', 'Not Qualified'],
+                    datasets: [{
+                        label: 'Applicants',
+                        data: [annQualified, annNotQualified],
+                        backgroundColor: ['#4ade80', '#fecaca'],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+        }
+
+        const accCtx = document.getElementById('accuracyChart');
+        if (accCtx) {
+            const cartAcc = {{ (cart_metrics.accuracy * 100) | round(2) if cart_metrics else 0
+        }};
+        const annAcc = {{ (ann_metrics.accuracy * 100) | round(2) if ann_metrics else 0 }};
+
+        new Chart(accCtx, {
+            type: 'bar',
+            data: {
+                labels: ['CART', 'ANN'],
+                datasets: [{
+                    label: 'Accuracy (%)',
+                    data: [cartAcc, annAcc],
+                    backgroundColor: ['#60a5fa', '#4ade80'],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+        }
+    });
+    </script>
 
 </body>
 

@@ -1,4 +1,6 @@
 # blueprints/__init__.py
+from .auth import auth_bp          # if you have it
+from .schedule import schedule_bp  # your schedule.py blueprint
 from flask import Blueprint
 
 from .auth import auth_bp
@@ -16,3 +18,10 @@ def register_blueprints(app):
     app.register_blueprint(interview_bp)
     app.register_blueprint(schedule_bp)
     app.register_blueprint(summary_bp)
+
+
+def register_blueprints(app):
+    # register each once
+    app.register_blueprint(auth_bp)      # if exists
+    app.register_blueprint(hr_bp)
+    app.register_blueprint(schedule_bp)

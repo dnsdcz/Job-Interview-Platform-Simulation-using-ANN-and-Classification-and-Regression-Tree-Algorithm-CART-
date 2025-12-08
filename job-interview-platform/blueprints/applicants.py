@@ -1,3 +1,4 @@
+
 # blueprints/applicants.py
 
 from datetime import datetime
