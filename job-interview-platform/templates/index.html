@@ -5,8 +5,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aceview - AI-Powered Interview Platform</title>
+
+    <!-- Poppins font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
+        :root {
+            --primary-red: #B2271B;
+            --primary-red-dark: #921E15;
+            --footer-dark: #3b0f0f;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -14,15 +25,15 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             line-height: 1.6;
-            color: #333;
+            color: #1f2933;
             overflow-x: hidden;
         }
 
         /* Header */
         .header {
-            background: rgba(26, 54, 93, 0.95);
+            background: rgba(178, 39, 27, 0.95);
             backdrop-filter: blur(10px);
             padding: 0.8rem 0;
             position: fixed;
@@ -43,7 +54,7 @@
 
         .logo {
             font-size: 1.8rem;
-            font-weight: bold;
+            font-weight: 700;
             color: white;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
@@ -61,6 +72,7 @@
             font-weight: 500;
             transition: all 0.3s ease;
             position: relative;
+            font-size: 0.95rem;
         }
 
         .nav-links a:hover {
@@ -84,60 +96,65 @@
         }
 
         .btn-primary {
-            background-color: #1a365d;
-            color: #f7fafc;
-            /* Navy blue text */
+            background-color: #ffffff;
+            color: var(--primary-red);
             padding: 0.75rem 1.75rem;
             border-radius: 30px;
-            font-weight: 700;
-            font-size: 1.1rem;
+            font-weight: 600;
+            font-size: 0.95rem;
             letter-spacing: 0.6px;
-            border: 2px solid #1a365d;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
             transition: all 0.3s ease;
             text-decoration: none;
             cursor: pointer;
         }
 
         .btn-primary:hover {
-            background-color: #b3b9c0;
-            color: #1a365d;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            background-color: #F9FAFB;
+            color: var(--primary-red);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
             transform: translateY(-3px);
         }
 
         .btn-primary:active {
             transform: scale(0.97);
-            box-shadow: 0 4px 12px rgba(26, 54, 93, 0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
         .btn-primary:focus-visible {
-            outline: 3px solid #90cdf4;
+            outline: 3px solid #fecaca;
             outline-offset: 3px;
         }
 
 
 
 
+        .logbtn-primary:active {
+            transform: scale(0.97);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .logbtn-primary:focus-visible {
+            outline: 3px solid #6c1b1b;
+            outline-offset: 3px;
+        }
+
         /* Hero Section */
         .hero {
             min-height: 100vh;
             padding: 120px 0 80px;
             text-align: center;
-            background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+            background: linear-gradient(135deg, var(--primary-red) 0%, var(--primary-red-dark) 100%);
             color: white;
             position: relative;
             overflow: hidden;
 
-            /* ➕ Added for perfect centering */
             display: flex;
             flex-direction: column;
             justify-content: center;
-            /* vertical center */
             align-items: center;
-            /* horizontal center */
         }
-
 
         .hero::before {
             content: '';
@@ -146,7 +163,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 100" fill="rgba(245,245,255,0.1)"><polygon points="0,0 1000,0 1000,100 0,100"/></svg>');
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 100" fill="rgba(255,255,255,0.08)"><polygon points="0,0 1000,0 1000,100 0,100"/></svg>');
             animation: float 6s ease-in-out infinite;
         }
 
@@ -169,16 +186,24 @@
             position: relative;
             z-index: 2;
             text-align: center;
-            /* ← centers text and inline elements */
         }
-
 
         .hero h1 {
             font-size: 3.5rem;
             margin-bottom: 1.5rem;
             font-weight: 700;
             text-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            animation: slideInUp 1s ease-out;
+            letter-spacing: 0.18em;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 2.5rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            opacity: 0.95;
+            animation: slideInUp 1s ease-out 0.2s both;
         }
 
         @keyframes slideInUp {
@@ -191,16 +216,6 @@
                 opacity: 1;
                 transform: translateY(0);
             }
-        }
-
-        .hero p {
-            font-size: 1.3rem;
-            margin-bottom: 2.5rem;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-            opacity: 0.95;
-            animation: slideInUp 1s ease-out 0.2s both;
         }
 
         .hero-buttons {
@@ -218,12 +233,13 @@
             font-weight: 600;
             transition: all 0.3s ease;
             display: inline-block;
+            font-size: 0.95rem;
         }
 
         .btn-secondary {
             background: rgba(255, 255, 255, 0.1);
             color: white;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.35);
             backdrop-filter: blur(10px);
         }
 
@@ -236,7 +252,7 @@
         /* Carousel Section */
         .carousel-section {
             padding: 100px 0;
-            background: linear-gradient(135deg, #f0f4f8 0%, #dce3ea 100%);
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
         }
 
         .carousel-container {
@@ -257,8 +273,8 @@
         .carousel-title h2 {
             font-size: 2.8rem;
             margin-bottom: 1rem;
-            color: #1a365d;
-            font-weight: 800;
+            color: var(--primary-red);
+            font-weight: 700;
             letter-spacing: 0.5px;
         }
 
@@ -270,19 +286,17 @@
             line-height: 1.8;
         }
 
-        /* Carousel Structure */
         .carousel {
             position: relative;
             overflow: hidden;
             border-radius: 24px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
-            background: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.8);
             padding: 20px;
         }
 
-        /* Slides */
         .carousel-track {
             display: flex;
             transition: transform 0.5s ease;
@@ -296,18 +310,15 @@
             z-index: 1;
         }
 
-
-
-        /* Slide Content */
         .slide-icon {
             font-size: 4rem;
-            color: #1a365d;
+            color: var(--primary-red);
         }
 
         .slide-title {
             font-size: 2.2rem;
             margin-bottom: 1.5rem;
-            color: #1a365d;
+            color: var(--primary-red);
             font-weight: 700;
         }
 
@@ -319,7 +330,6 @@
             margin: 0 auto;
         }
 
-        /* Controls */
         .carousel-controls {
             display: flex;
             justify-content: center;
@@ -334,8 +344,8 @@
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.85);
-            color: #1a365d;
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--primary-red);
             border: none;
             font-size: 1.4rem;
             cursor: pointer;
@@ -348,14 +358,9 @@
             outline: none;
         }
 
-        .carousel-btn i {
-            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        }
-
-
         .carousel-btn:hover {
             transform: translateY(-2px) scale(1.05);
-            background: #1a365d;
+            background: var(--primary-red);
             color: #ffffff;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
         }
@@ -366,11 +371,10 @@
         }
 
         .carousel-btn:focus-visible {
-            outline: 3px solid #90cdf4;
+            outline: 3px solid #fecaca;
             outline-offset: 3px;
         }
 
-        /* Indicators */
         .carousel-indicators {
             display: flex;
             justify-content: center;
@@ -382,13 +386,13 @@
             width: 14px;
             height: 14px;
             border-radius: 50%;
-            background: rgba(26, 54, 93, 0.25);
+            background: rgba(178, 39, 27, 0.25);
             cursor: pointer;
             transition: all 0.3s ease;
         }
 
         .indicator.active {
-            background: #1a365d;
+            background: var(--primary-red);
             transform: scale(1.3);
         }
 
@@ -412,7 +416,7 @@
         .section-title h2 {
             font-size: 2.5rem;
             margin-bottom: 1rem;
-            color: #1a365d;
+            color: var(--primary-red);
             font-weight: 700;
         }
 
@@ -428,7 +432,7 @@
             padding: 2.5rem;
             border-radius: 20px;
             text-align: center;
-            border: 1px solid rgba(226, 232, 240, 0.5);
+            border: 1px solid rgba(226, 232, 240, 0.7);
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
@@ -441,7 +445,7 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(76, 175, 80, 0.1), transparent);
+            background: linear-gradient(90deg, transparent, rgba(178, 39, 27, 0.08), transparent);
             transition: left 0.5s ease;
         }
 
@@ -452,22 +456,19 @@
         .feature-card:hover {
             transform: translateY(-10px);
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            border-color: rgba(76, 175, 80, 0.3);
+            border-color: rgba(178, 39, 27, 0.35);
         }
 
         .feature-icon {
             font-size: 3rem;
             margin-bottom: 1.5rem;
-            background: linear-gradient(135deg, #4CAF50, #2196F3);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--primary-red);
         }
 
         .feature-card h3 {
             font-size: 1.4rem;
             margin-bottom: 1rem;
-            color: #1a365d;
+            color: var(--primary-red);
             font-weight: 600;
         }
 
@@ -479,33 +480,12 @@
         /* CTA Section */
         .cta-section {
             padding: 80px 0;
-            background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+            background: linear-gradient(135deg, var(--primary-red) 0%, var(--primary-red-dark) 100%);
             text-align: center;
             color: white;
             position: relative;
             overflow: hidden;
             height: 100%;
-        }
-
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-            animation: rotate 20s linear infinite;
-        }
-
-        @keyframes rotate {
-            from {
-                transform: rotate(0deg);
-            }
-
-            to {
-                transform: rotate(360deg);
-            }
         }
 
         .cta-section .container {
@@ -527,7 +507,7 @@
 
         .btn-white {
             background: white;
-            color: #1a365d;
+            color: var(--primary-red);
         }
 
         .btn-white:hover {
@@ -538,7 +518,7 @@
 
         /* Footer */
         .footer {
-            background: #2d3748;
+            background: var(--footer-dark);
             color: white;
             padding: 40px 0 20px;
             text-align: center;
@@ -553,10 +533,11 @@
         }
 
         .footer-section a {
-            color: #cbd5e0;
+            color: #f9fafb;
             text-decoration: none;
             margin: 0 1rem;
             transition: color 0.3s ease;
+            font-size: 0.9rem;
         }
 
         .footer-section a:hover {
@@ -564,9 +545,72 @@
         }
 
         .footer-bottom {
-            border-top: 1px solid #4a5568;
+            border-top: 1px solid #4a1b1b;
             padding-top: 2rem;
-            color: #cbd5e0;
+            color: #f3f4f6;
+        }
+
+        /* Support/Privacy Modals */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-dialog {
+            background: #ffffff;
+            max-width: 780px;
+            width: 92%;
+            max-height: 85vh;
+            border-radius: 18px;
+            padding: 22px 24px 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow-y: auto;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 10px;
+            right: 14px;
+            border: none;
+            background: transparent;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6B7280;
+        }
+
+        .modal-title {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: var(--primary-red);
+            margin-bottom: 0.4rem;
+        }
+
+        .modal-subtitle {
+            font-size: 0.9rem;
+            color: #6B7280;
+            margin-bottom: 1.2rem;
+        }
+
+        .modal-dialog p {
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: #374151;
+            margin-bottom: 0.8rem;
+        }
+
+        .modal-dialog a {
+            color: var(--primary-red);
+            text-decoration: underline;
         }
 
         /* Responsive Design */
@@ -618,7 +662,7 @@
                 <ul class="nav-links">
                     <li><a href="#features">Features</a></li>
                     <li><a href="#about">About</a></li>
-                    <li><a href="/login" class="btn-primary">Login</a></li>
+                    <li><a href="/login" class="logbtn-primary">Login</a></li>
                 </ul>
             </nav>
         </div>
@@ -635,12 +679,10 @@
             </p>
             <div class="hero-buttons">
                 <a href="/register" class="btn btn-primary">Register</a>
-                <a href="/privacy" class="btn btn-secondary">Learn More</a>
+                <a href="#" class="btn btn-secondary" id="privacyHeroLink">Learn More</a>
             </div>
         </div>
     </section>
-
-
 
     <!-- Features Section -->
     <section id="features" class="features">
@@ -677,15 +719,13 @@
         </div>
     </section>
 
-
-
     <!-- Footer -->
     <footer id="about" class="footer">
         <div class="container">
             <div class="footer-content">
                 <div class="footer-section">
-                    <a href="/support">Support</a>
-                    <a href="/privacy">Privacy</a>
+                    <a href="#" id="supportLink">Support</a>
+                    <a href="#" id="privacyLink">Privacy</a>
                 </div>
             </div>
             <div class="footer-bottom">
@@ -694,11 +734,51 @@
         </div>
     </footer>
 
+    <!-- SUPPORT MODAL -->
+    <div class="modal-overlay" id="supportModal">
+        <div class="modal-dialog">
+            <button class="modal-close" type="button" data-close="supportModal">&times;</button>
+            <h2 class="modal-title">Support</h2>
+            <p class="modal-subtitle">We’re here to help you use Aceview smoothly.</p>
+            <p>
+                If you have any questions or need assistance, please contact our support team at
+                <a href="mailto:dnsdelacruz03@gmail.com">dnsdelacruz03@gmail.com</a>.
+            </p>
+            <p>
+                You can also reach us by phone at <strong>(123) 456-7890</strong>. Our team can help with account
+                access, interview issues, and general questions about the platform.
+            </p>
+        </div>
+    </div>
+
+    <!-- PRIVACY MODAL -->
+    <div class="modal-overlay" id="privacyModal">
+        <div class="modal-dialog">
+            <button class="modal-close" type="button" data-close="privacyModal">&times;</button>
+            <h2 class="modal-title">Privacy &amp; Data Protection</h2>
+            <p class="modal-subtitle">How Aceview handles and protects your information.</p>
+            <p>
+                At Aceview, we are committed to protecting your privacy. This Privacy Policy explains how we collect,
+                use, and safeguard your personal information when you use our AI-powered interview platform.
+            </p>
+            <p>
+                Your data is used solely to improve your experience and the hiring process, and we never share your
+                information with unauthorized third parties. Access is limited to authorized HR staff and admins.
+            </p>
+            <p>
+                For questions about our privacy practices or to request data deletion, please contact us at
+                <a href="mailto:privacy@aceview.com">privacy@aceview.com</a>.
+            </p>
+        </div>
+    </div>
+
     <script>
-        // Carousel functionality
+        // Carousel functionality (safe even if you don't have the HTML yet)
         class Carousel {
             constructor() {
                 this.track = document.getElementById('carouselTrack');
+                if (!this.track) return; // no carousel markup, just skip
+
                 this.slides = this.track.children;
                 this.nextBtn = document.getElementById('nextBtn');
                 this.prevBtn = document.getElementById('prevBtn');
@@ -710,30 +790,24 @@
             }
 
             init() {
-                // Button event listeners
                 this.nextBtn.addEventListener('click', () => this.nextSlide());
                 this.prevBtn.addEventListener('click', () => this.prevSlide());
 
-                // Indicator event listeners
                 this.indicators.forEach((indicator, index) => {
                     indicator.addEventListener('click', () => this.goToSlide(index));
                 });
 
-                // Auto-play carousel
                 this.startAutoPlay();
 
-                // Pause auto-play on hover
                 const carousel = document.querySelector('.carousel');
                 carousel.addEventListener('mouseenter', () => this.stopAutoPlay());
                 carousel.addEventListener('mouseleave', () => this.startAutoPlay());
             }
 
             updateCarousel() {
-                // Move track
                 const translateX = -this.currentSlide * 100;
                 this.track.style.transform = `translateX(${translateX}%)`;
 
-                // Update indicators
                 this.indicators.forEach((indicator, index) => {
                     indicator.classList.toggle('active', index === this.currentSlide);
                 });
@@ -767,7 +841,6 @@
             }
         }
 
-        // Initialize carousel when DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
             new Carousel();
         });
@@ -775,24 +848,73 @@
         // Smooth scrolling for navigation links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
-                e.preventDefault();
                 const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
+                if (!target) return;
+                e.preventDefault();
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            });
+        });
+
+        // Header scroll effect (red palette)
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('.header');
+            if (window.scrollY > 100) {
+                header.style.background = 'rgba(146, 30, 21, 0.98)';
+            } else {
+                header.style.background = 'rgba(178, 39, 27, 0.95)';
+            }
+        });
+
+        // MODALS
+        function openModal(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('show');
+        }
+
+        function closeModal(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('show');
+        }
+
+        document.getElementById('supportLink').addEventListener('click', e => {
+            e.preventDefault();
+            openModal('supportModal');
+        });
+
+        document.getElementById('privacyLink').addEventListener('click', e => {
+            e.preventDefault();
+            openModal('privacyModal');
+        });
+
+        const privacyHeroLink = document.getElementById('privacyHeroLink');
+        if (privacyHeroLink) {
+            privacyHeroLink.addEventListener('click', e => {
+                e.preventDefault();
+                openModal('privacyModal');
+            });
+        }
+
+        document.querySelectorAll('.modal-close').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.getAttribute('data-close');
+                if (id) closeModal(id);
+            });
+        });
+
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', e => {
+                if (e.target === overlay) {
+                    overlay.classList.remove('show');
                 }
             });
         });
 
-        // Header scroll effect
-        window.addEventListener('scroll', () => {
-            const header = document.querySelector('.header');
-            if (window.scrollY > 100) {
-                header.style.background = 'rgba(26, 54, 93, 0.98)';
-            } else {
-                header.style.background = 'rgba(26, 54, 93, 0.95)';
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('show'));
             }
         });
     </script>

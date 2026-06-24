@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | AceView</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-red: #B2271B;
+            --primary-dark: #4B0E0A;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            background: linear-gradient(180deg, var(--primary-dark) 0%, var(--primary-red) 100%);
+            color: white;
+            padding: 30px 20px;
+            position: fixed;
+        }
+
+        .sidebar h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 24px;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .nav-links { list-style: none; }
+        .nav-links li { margin-bottom: 15px; }
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+        .nav-links a:hover, .nav-links a.active {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Main Content Area */
+        .main-content {
+            margin-left: 250px;
+            padding: 40px;
+            width: calc(100% - 250px);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+        }
+
+        .logout-btn {
+            background-color: white;
+            color: var(--primary-red);
+            border: 1px solid var(--primary-red);
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .logout-btn:hover {
+            background-color: var(--primary-red);
+            color: white;
+        }
+
+        /* Dashboard Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background-color: var(--card-bg);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .stat-icon {
+            background-color: #fee2e2;
+            color: var(--primary-red);
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+        }
+
+        .stat-info h3 {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .stat-info p {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        /* Quick actions or info section */
+        .content-section {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .content-section h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 20px;
+            margin-bottom: 16px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <h2>AceView Admin</h2>
+        <ul class="nav-links">
+            <li><a href="#" class="active"><i class='bx bxs-dashboard'></i> Dashboard</a></li>
+            <li><a href="#"><i class='bx bx-user-pin'></i> User Management</a></li>
+            <li><a href="#"><i class='bx bx-cog'></i> System Settings</a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <div class="header">
+            <h1>Welcome, {{ username }}</h1>
+            <a href="{{ url_for('auth.logout') }}" class="logout-btn"><i class='bx bx-log-out'></i> Logout</a>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class='bx bx-group'></i></div>
+                <div class="stat-info">
+                    <h3>Total Users</h3>
+                    <p>{{ total_users }}</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class='bx bx-briefcase'></i></div>
+                <div class="stat-info">
+                    <h3>HR Staff</h3>
+                    <p>{{ total_hr }}</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class='bx bx-user-voice'></i></div>
+                <div class="stat-info">
+                    <h3>Applicants</h3>
+                    <p>{{ total_applicants }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2>System Overview</h2>
+            <p style="color: var(--text-muted); font-size: 14px; line-height: 1.6;">
+                This is the central administrative hub. From here, you can manage user roles, oversee system activity, and configure application settings. More modules can be added here as needed.
+            </p>
+        </div>
+    </main>
+
+</body>
+</html>

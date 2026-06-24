@@ -9,6 +9,12 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from sentence_transformers import SentenceTransformer, util
 from keybert import KeyBERT
+from flask_mail import Mail
+from flask_mysqldb import MySQL
+
+mysql = MySQL()
+mail = Mail()
+
 
 # logging
 logging.basicConfig(

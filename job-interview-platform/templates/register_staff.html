@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Staff Registration | AceView</title>
+
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
+  <style>
+    :root {
+      --primary-red: #B2271B;
+      --primary-red-dark: #921E15;
+      --input-border: #e5e7eb;
+      --text-muted: #6b7280;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      font-family: 'Poppins', sans-serif;
+      background:
+        radial-gradient(circle at 80% 40%, rgba(255, 255, 255, 0.80), rgba(255, 255, 255, 0) 45%),
+        radial-gradient(circle at 80% 65%, #B2271B 0%, rgba(178, 39, 27, 0.55) 55%, rgba(178, 39, 27, 0) 90%),
+        radial-gradient(circle at 25% 70%, #921E15 0%, rgba(146, 30, 21, 0.45) 60%, rgba(146, 30, 21, 0) 90%),
+        radial-gradient(circle at 15% 25%, #4B0E0A 0%, rgba(75, 14, 10, 0.55) 60%, rgba(75, 14, 10, 0) 90%),
+        linear-gradient(135deg, #4B0E0A, #921E15, #B2271B);
+      background-blend-mode: screen, overlay, soft-light, normal;
+      background-attachment: fixed;
+    }
+
+    h1, h2, h3, .logtitle { font-family: 'Outfit', sans-serif; }
+
+    .container {
+      display: flex;
+      width: 100%;
+      max-width: 1100px;
+      background: linear-gradient(135deg, #921E15 0%, #4b0e0a 100%);
+      border-radius: 32px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+      overflow: hidden;
+      animation: fadeInUp 0.5s ease;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .left-side {
+      flex: 1.1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      min-height: 600px;
+    }
+
+    .left-side::before {
+      content: '';
+      position: absolute;
+      width: 160%;
+      height: 160%;
+      background: #ffffff;
+      border-radius: 55% 45% 55% 45%;
+      transform: translateX(-10%);
+    }
+
+    .left-side::after {
+      content: '';
+      position: absolute;
+      inset: 20%;
+      background: url("{{ url_for('static', filename='login.png') }}") no-repeat center;
+      background-size: contain;
+      z-index: 1;
+    }
+
+    .right-side {
+      flex: 0.9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px 40px;
+      background: transparent;
+    }
+
+    .login-box {
+      width: 100%;
+      max-width: 380px;
+      background: rgba(255, 255, 255, 0.96);
+      border-radius: 24px;
+      padding: 30px 26px 28px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+    }
+
+    .logtitle { font-size: 32px; font-weight: 700; margin-bottom: 6px; color: #111827; }
+    .subtitle { color: var(--text-muted); font-size: 13px; margin-bottom: 24px; }
+
+    .form-group { position: relative; margin-bottom: 16px; }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 12px 15px 12px 45px;
+      border-radius: 999px;
+      border: 2px solid var(--input-border);
+      background: #f9fafb;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      font-family: 'Poppins', sans-serif;
+      outline: none;
+      appearance: none;
+    }
+    
+    .form-group select { padding-left: 45px; cursor: pointer; }
+    .form-group input:focus, .form-group select:focus {
+      border-color: #B2271B;
+      background-color: #fff;
+      box-shadow: 0 0 0 4px rgba(178, 39, 27, 0.14);
+    }
+
+    .form-group i {
+      position: absolute;
+      top: 50%;
+      left: 15px;
+      transform: translateY(-50%);
+      color: #9ca3af;
+      font-size: 18px;
+    }
+    .form-group input:focus + i, .form-group select:focus + i { color: #B2271B; }
+
+    .btn-login {
+      width: 100%;
+      padding: 11px;
+      border: none;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #B2271B 0%, #921E15 100%);
+      color: white;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(178, 39, 27, 0.35);
+      margin-top: 10px;
+    }
+    .btn-login:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(146, 30, 21, 0.45); }
+
+    .register-link { text-align: center; margin-top: 14px; font-size: 13px; color: var(--text-muted); }
+    .register-link a { color: #B2271B; text-decoration: none; font-weight: 500; }
+    .register-link a:hover { color: #921E15; text-decoration: underline; }
+
+    .error-message {
+      background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;
+      padding: 10px 12px; border-radius: 12px; margin-bottom: 16px;
+      display: flex; align-items: center; gap: 8px; font-size: 13px;
+    }
+    .g-recaptcha-wrapper { margin: 10px 0; display: flex; justify-content: center; transform: scale(0.9); transform-origin: center; }
+
+    @media (max-width: 900px) {
+      .container { flex-direction: column; }
+      .left-side { order: 1; min-height: 220px; }
+      .right-side { order: 2; padding: 24px 18px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="left-side"></div>
+    <div class="right-side">
+      <div class="login-box">
+        <div class="logtitle">Staff Setup</div>
+        <p class="subtitle">Create a new HR or Administrator account.</p>
+
+        <form method="POST" action="{{ url_for('auth.register_staff') }}">
+          {% if error %}
+          <div class="error-message">
+            <i class='bx bx-error-circle'></i><span>{{ error }}</span>
+          </div>
+          {% endif %}
+
+          <div class="form-group">
+            <input type="text" name="username" placeholder="Username" required>
+            <i class='bx bx-user'></i>
+          </div>
+
+          <div class="form-group">
+            <input type="email" name="email" placeholder="Corporate Email" required>
+            <i class='bx bx-envelope'></i>
+          </div>
+
+          <div class="form-group">
+            <input type="text" name="contact_num" placeholder="Contact Number (Optional)">
+            <i class='bx bx-phone'></i>
+          </div>
+
+          <div class="form-group">
+            <select name="user_type" required>
+              <option value="" disabled selected>Select Staff Role</option>
+              <option value="HR">Human Resources (HR)</option>
+              <option value="Admin">System Administrator</option>
+            </select>
+            <i class='bx bx-briefcase'></i>
+          </div>
+
+          <div class="form-group">
+            <input type="password" name="password" placeholder="Secure Password" required>
+            <i class='bx bx-lock'></i>
+          </div>
+
+          <div class="g-recaptcha-wrapper">
+            <div class="g-recaptcha" data-sitekey="6LfLvBEsAAAAAD3LBG4FWmxbsEPn1068Nv6IO3Fm"></div>
+          </div>
+
+          <button class="btn-login" type="submit">Create Staff Account</button>
+
+          <div class="register-link">
+            Already have a staff account? <a href="/staff-login">Sign In here</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

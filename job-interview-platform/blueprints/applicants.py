@@ -1,5 +1,5 @@
-# blueprints/applicants.py
 from datetime import datetime
+from urllib.parse import unquote
 
 import numpy as np
 
@@ -17,11 +17,13 @@ from flask import (
 from werkzeug.utils import secure_filename
 
 from extensions import mysql, logger
+from services.email_service import send_step1_completed_email  # ⬅️ NEW IMPORT
 
 # CART (Decision Tree)
 from sklearn.tree import DecisionTreeClassifier
 
 applicants_bp = Blueprint("applicants", __name__)
+
 
 # ---------- CART (Decision Tree) MODEL FOR PRESCREEN & APPLICATION ----------
 
@@ -49,7 +51,7 @@ def cart_skill_score(skill_count):
     return min(skill_count, 10) / 10.0
 
 
-# Sample training data (you can replace with your real dataset later)
+# Sample training data
 raw_applicants_cart = [
     ("bachelor",    25,  3,  4, 1),
     ("high_school", 21,  0,  1, 0),
@@ -91,8 +93,9 @@ def cart_predict_from_form(age, education_level, experience, skills_raw: str):
     Use the global cart_model (DecisionTreeClassifier) to compute
     score and predicted status from form data.
     """
-    # education
-    edu_score = CART_EDU_MAP.get(education_level, 1)
+    # education mapping normalized fallback
+    edu_clean = education_level.lower().replace("'", "").replace(" ", "_") if education_level else "high_school"
+    edu_score = CART_EDU_MAP.get(edu_clean, 1)
 
     # normalized & derived scores
     age_norm = cart_normalize_age(age)
@@ -123,7 +126,7 @@ def cart_predict_from_form(age, education_level, experience, skills_raw: str):
     }
 
 
-# ---------- Dashboard & application ----------
+# ---------- Dashboard & Application Pipeline ----------
 
 
 @applicants_bp.route("/dashboard")
@@ -135,8 +138,9 @@ def dashboard():
     user_id = session["user_id"]
     cur = mysql.connection.cursor()
 
+    # Get baseline profile credentials from 'users' (normalized column name: user_type)
     cur.execute(
-        "SELECT email, username, contact_number FROM users WHERE id = %s",
+        "SELECT email, username, contact_num FROM users WHERE user_id = %s",
         (user_id,),
     )
     user = cur.fetchone()
@@ -146,38 +150,70 @@ def dashboard():
         return redirect(url_for("auth.login"))
     email, username, contact = user
 
-    # check if user already has an application
-    cur.execute("SELECT * FROM applicants WHERE email = %s", (email,))
+    # Retrieve the candidate's latest normalized application data
+    cur.execute(
+        """
+        SELECT
+            app.application_id,
+            u.username,
+            u.email,
+            u.contact_num,
+            j.job_name,
+            app.screening_status,
+            COALESCE(
+                (SELECT SUM(TIMESTAMPDIFF(YEAR, start_date, COALESCE(end_date, CURDATE()))) 
+                 FROM work_experience 
+                 WHERE applicant_id = a.applicant_id), 0
+            ) AS years_experience,
+            (SELECT degree_level FROM educations WHERE applicant_id = a.applicant_id ORDER BY graduation_year DESC LIMIT 1) AS education_level,
+            (SELECT GROUP_CONCAT(sm.skill_name SEPARATOR ', ') 
+             FROM applicant_skills ask 
+             JOIN skills_master sm ON sm.skill_id = ask.skill_id 
+             WHERE ask.applicant_id = a.applicant_id) AS skills,
+            TIMESTAMPDIFF(YEAR, a.date_of_birth, CURDATE()) AS age
+        FROM applications app
+        JOIN applicants a ON a.applicant_id = app.applicant_id
+        JOIN users u ON u.user_id = a.user_id
+        JOIN jobs j ON j.job_id = app.job_id
+        WHERE u.user_id = %s
+        ORDER BY app.application_id DESC
+        LIMIT 1
+        """,
+        (user_id,),
+    )
     row = cur.fetchone()
     applicant = None
     if row:
         applicant = {
             "id": row[0],
-            "user_id": row[1],
-            "name": row[2],
-            "email": row[3],
-            "contact": row[4],
-            "position": row[5],
-            "eligibility": row[6],
-            "yearexperience": row[7],
-            "level": row[8],
-            "status": row[9],
-            "qualified": row[10],
-            "confidence": row[11],
+            "user_id": user_id,
+            "name": row[1],
+            "email": row[2],
+            "contact": row[3],
+            "position": row[4],
+            "eligibility": "Eligible" if row[5] == "Passed Screening" else "Not Eligible",
+            "yearexperience": row[6],
+            "level": "N/A",
+            "status": row[5],  # screening_status string
+            "confidence": 75,  # static fallback when not using live prediction state
+            "address": None,
+            "education_level": row[7] or "N/A",
+            "skills": row[8] or "None listed",
+            "age": row[9]
         }
-        # ensure interview uses same values
-        session["position"] = row[5]
-        session["experience"] = row[7]
-        session["name"] = row[2]
+        # Sync simple session data for backward compatibility
+        session["position"] = row[4]
+        session["experience"] = row[6]
+        session["name"] = row[1]
 
-    # position limits info
+    # Fetch available job list and real-time candidate limit statistics
     cur.execute(
         """
-        SELECT pl.id, pl.position, pl.max_allowed,
-               COUNT(a.position) AS current_count
-        FROM position_limits pl
-        LEFT JOIN applicants a ON pl.position = a.position
-        GROUP BY pl.id, pl.position, pl.max_allowed
+        SELECT j.job_id, j.job_name, j.max_applicants, COUNT(app.application_id) AS current_count
+        FROM jobs j
+        LEFT JOIN applications app ON app.job_id = j.job_id
+        GROUP BY j.job_id, j.job_name, j.max_applicants
+        ORDER BY j.job_name ASC
         """
     )
     positions = cur.fetchall()
@@ -187,11 +223,38 @@ def dashboard():
             "position": p[1],
             "max_allowed": p[2],
             "current_count": p[3],
-            "is_full": p[3] >= p[2],
+            "is_full": bool(p[2] and p[3] >= p[2]),
         }
         for p in positions
     ]
 
+    # Pull dynamic jobs and detailed description requirements
+    cur.execute(
+        """
+        SELECT j.job_name, j.application_status, j.opening_date, j.application_deadline,
+               jd.education_baseline, jd.required_exp_years, jd.minimum_age, jd.employment_type
+        FROM jobs j
+        LEFT JOIN job_desc jd ON jd.job_id = j.job_id
+        ORDER BY j.opening_date DESC, j.job_name ASC
+        """
+    )
+    available_jobs = [
+        {
+            "position": p[0],
+            "max_allowed": None,
+            "form_access": p[1],
+            "opening_date": p[2],
+            "deadline_date": p[3],
+            "education_level": p[4],
+            "experience_years": p[5],
+            "min_age": p[6],
+            "employment_type": p[7],
+        }
+        for p in cur.fetchall()
+    ]
+
+    # Fetch assessment scores dynamically
+    chatbot_data = None
     name = session.get("name", username)
     result = session.get("result")
     reason = session.get("reason")
@@ -217,6 +280,8 @@ def dashboard():
         application_data=applicant,
         has_applied=applicant is not None,
         position_limits=position_limits,
+        available_jobs=available_jobs,
+        chatbot_data=chatbot_data,
     )
 
 
@@ -231,7 +296,6 @@ def submit_application():
         form = request.form
         user_id = session["user_id"]
 
-        # Collect Form Data
         name = form.get("name")
         email = form.get("email")
         contact = form.get("contact")
@@ -239,9 +303,8 @@ def submit_application():
         address = form.get("address")
 
         position = form.get("position")
-        start_date = form.get("start_date")
-        desired_pay = int(form.get("desired_pay")) if form.get(
-            "desired_pay") else 0
+        start_date_form = form.get("start_date")
+        desired_pay = int(form.get("desired_pay")) if form.get("desired_pay") else 0
         employment_type = form.get("employment_type")
 
         school = form.get("school")
@@ -253,73 +316,129 @@ def submit_application():
 
         job_title = form.get("job_title")
         company = form.get("company")
-        experience = int(form.get("experience")) if form.get(
-            "experience") else 0
+        experience = int(form.get("experience")) if form.get("experience") else 0
         responsibilities = form.get("responsibilities")
         skills = form.get("skills", "")
 
         cur = mysql.connection.cursor()
 
-        # --- 2. CHECK DUPLICATES ---
-        cur.execute("SELECT id FROM applicants WHERE email = %s", (email,))
-        if cur.fetchone():
-            flash("This email has already been used to apply.", "error")
+        # --- 2. RETRIEVE OR GENERATE ATOMIC APPLICANT RECORD ---
+        cur.execute("SELECT applicant_id FROM applicants WHERE user_id = %s", (user_id,))
+        app_row = cur.fetchone()
+        
+        dob_calc = f"{datetime.now().year - age}-01-01"
+        if app_row:
+            applicant_id = app_row[0]
+            # Update basic demography
+            cur.execute(
+                """
+                UPDATE applicants 
+                SET full_name = %s, date_of_birth = %s, current_location = %s 
+                WHERE applicant_id = %s
+                """,
+                (name, dob_calc, address, applicant_id)
+            )
+        else:
+            cur.execute(
+                """
+                INSERT INTO applicants (user_id, full_name, date_of_birth, current_location, preferred_location, resume_url)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                (user_id, name, dob_calc, address, address, "s3://resumes/placeholder_applicant.pdf")
+            )
+            applicant_id = cur.lastrowid
+
+        # --- 3. FETCH NORMALIZED JOB SPECIFICATIONS ---
+        cur.execute(
+            """
+            SELECT j.job_id, j.max_applicants, j.application_status, 
+                   jd.minimum_age, jd.required_exp_years
+            FROM jobs j
+            LEFT JOIN job_desc jd ON jd.job_id = j.job_id
+            WHERE j.job_name = %s
+            """,
+            (position,),
+        )
+        job_info = cur.fetchone()
+        if not job_info:
+            flash("The selected position does not exist.", "error")
             cur.close()
             return redirect(url_for("applicants.dashboard"))
 
-        # --- 3. FETCH HR REQUIREMENTS ---
-        # We need these to know WHY they failed (e.g. Min Age, Min Exp)
-        cur.execute("""
-            SELECT max_allowed, form_access, opening_date, deadline_date, 
-                   min_age, experience_years
-            FROM position_limits 
-            WHERE position = %s
-        """, (position,))
+        job_id, max_allowed, app_status, req_age, req_exp = job_info
 
-        limits = cur.fetchone()
+        # Check status & applicant limits
+        if app_status != "Open":
+            flash("Applications for this position are currently closed.", "error")
+            cur.close()
+            return redirect(url_for("applicants.dashboard"))
 
-        # Default values if not set in HR dashboard
-        req_age = 18
-        req_exp = 0
+        cur.execute("SELECT COUNT(*) FROM applications WHERE job_id = %s", (job_id,))
+        if cur.fetchone()[0] >= max_allowed:
+            flash("This position has reached its maximum applicant limit.", "error")
+            cur.close()
+            return redirect(url_for("applicants.dashboard"))
 
-        if limits:
-            max_allowed, form_access, open_date, deadline, db_min_age, db_min_exp = limits
-            if db_min_age:
-                req_age = db_min_age
-            if db_min_exp:
-                req_exp = db_min_exp
+        # Duplicate Application check
+        cur.execute("SELECT application_id FROM applications WHERE job_id = %s AND applicant_id = %s", (job_id, applicant_id))
+        if cur.fetchone():
+            flash("You have already applied for this position.", "error")
+            cur.close()
+            return redirect(url_for("applicants.dashboard"))
 
-            # Check Basic Limits (Closed/Full)
-            if form_access == 'Closed':
-                flash("Applications are closed.", "error")
-                return redirect(url_for("applicants.dashboard"))
-
+        # --- 4. INSERT EDUCATIONAL ENTITY ---
+        if school or degree or major:
+            cur.execute("DELETE FROM educations WHERE applicant_id = %s", (applicant_id,))
             cur.execute(
-                "SELECT COUNT(*) FROM applicants WHERE position = %s", (position,))
-            if cur.fetchone()[0] >= max_allowed:
-                flash("Position is full.", "error")
-                return redirect(url_for("applicants.dashboard"))
+                """
+                INSERT INTO educations (applicant_id, degree_level, major, institution, graduation_year)
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                (applicant_id, education_level or "High School", major or "General Education", school or "N/A", 2024)
+            )
 
-        # --- 4. CALCULATE SPECIFIC REASON FOR REJECTION ---
+        # --- 5. INSERT WORK EXPERIENCE ENTITY ---
+        if job_title or company or experience > 0:
+            cur.execute("DELETE FROM work_experience WHERE applicant_id = %s", (applicant_id,))
+            start_yr = datetime.now().year - experience
+            cur.execute(
+                """
+                INSERT INTO work_experience (applicant_id, job_title, company_name, start_date, end_date, description)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                (applicant_id, job_title or "Employee", company or "Company", f"{start_yr}-01-01", f"{datetime.now().year}-01-01", responsibilities or "")
+            )
+
+        # --- 6. ATOMIC SKILL MASTER LINKING ---
+        if skills:
+            cur.execute("DELETE FROM applicant_skills WHERE applicant_id = %s", (applicant_id,))
+            skills_list = [s.strip() for s in skills.split(",") if s.strip()]
+            for sk in skills_list:
+                cur.execute("SELECT skill_id FROM skills_master WHERE skill_name = %s", (sk,))
+                sk_row = cur.fetchone()
+                if sk_row:
+                    skill_id = sk_row[0]
+                else:
+                    cur.execute("INSERT INTO skills_master (skill_name) VALUES (%s)", (sk,))
+                    skill_id = cur.lastrowid
+                cur.execute(
+                    "INSERT IGNORE INTO applicant_skills (applicant_id, skill_id) VALUES (%s, %s)",
+                    (applicant_id, skill_id)
+                )
+
+        # --- 7. PROCESS RULES & MACHINE LEARNING (CART) ---
         rejection_reasons = []
 
-        # Rule 1: Age
         if age < req_age:
-            rejection_reasons.append(
-                f"Age ({age}) is below the minimum requirement of {req_age}")
+            rejection_reasons.append(f"Age ({age}) is below requirements ({req_age})")
 
-        # Rule 2: Experience
         if experience < req_exp:
-            rejection_reasons.append(
-                f"Experience ({experience} yrs) is below the required {req_exp} yrs")
+            rejection_reasons.append(f"Experience ({experience} yrs) is below requirements ({req_exp} yrs)")
 
-        # Rule 3: Skills Count (Basic check)
-        skills_list = [s.strip() for s in skills.split(",") if s.strip()]
-        if len(skills_list) < 2:
-            rejection_reasons.append(
-                "Insufficient skills listed (minimum 2 required)")
+        skills_list_eval = [s.strip() for s in skills.split(",") if s.strip()]
+        if len(skills_list_eval) < 2:
+            rejection_reasons.append("Insufficient skills listed (minimum 2 required)")
 
-        # Rule 4: AI Score (Soft Check) - USING DECISION TREE (CART)
         try:
             cart_result = cart_predict_from_form(
                 age=age,
@@ -327,80 +446,58 @@ def submit_application():
                 experience=experience,
                 skills_raw=skills,
             )
-            model_score = cart_result["model_score"]           # 0–1
-            confidence = cart_result["probability_percent"]    # 0–100
+            model_score = cart_result["model_score"]
+            confidence = cart_result["probability_percent"]
             session["cart_details"] = cart_result
         except Exception as e:
             logger.error(f"CART prediction error: {e}")
             model_score = 0.5
-            confidence = model_score * 100
+            confidence = 50.0
 
-        # If they passed hard rules, check AI score
-        if not rejection_reasons:
-            if model_score < 0.55:  # Threshold (still valid, 0–1 scale)
-                rejection_reasons.append(
-                    "Assessment score below qualification threshold")
+        if not rejection_reasons and model_score < 0.55:
+            rejection_reasons.append("Assessment score below qualification threshold")
 
-        # --- 5. DETERMINE FINAL STATUS ---
+        # Set final eligibility evaluation
         if not rejection_reasons:
             eligibility = "Eligible"
-            qualified_status = "Qualified"
+            screening_status = "Passed Screening"
             final_reason = "You meet all requirements for this position."
         else:
             eligibility = "Not Eligible"
-            qualified_status = "Not Qualified"
-            # Combine all reasons into one string
-            final_reason = "Not Qualified: " + "; ".join(rejection_reasons)
+            screening_status = "Failed Screening"
+            final_reason = "Not Eligible: " + "; ".join(rejection_reasons)
 
-        status = "Pending"
-
-        # --- 6. INSERT INTO DATABASE ---
-        query = """
-            INSERT INTO applicants
-            (user_id, name, email, contact, position, 
-             address, start_date, desired_pay, employment_type,
-             school, school_location, years_attended, education_level, degree, major,
-             job_title, company, yearexperience, responsibilities, skills,
-             eligibility, status, qualified, confidence)
-            VALUES 
-            (%s, %s, %s, %s, %s, 
-             %s, %s, %s, %s, 
-             %s, %s, %s, %s, %s, %s, 
-             %s, %s, %s, %s, %s, 
-             %s, %s, %s, %s)
-        """
-
-        values = (
-            user_id, name, email, contact, position,
-            address, start_date, desired_pay, employment_type,
-            school, school_location, years_attended, education_level, degree, major,
-            job_title, company, experience, responsibilities, skills,
-            eligibility, status, qualified_status, round(confidence, 1)
+        # --- 8. SUBMIT APPLICATION JUNCTION RECORD ---
+        cur.execute(
+            """
+            INSERT INTO applications (job_id, applicant_id, screening_status, applied_at)
+            VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+            """,
+            (job_id, applicant_id, screening_status)
         )
-
-        cur.execute(query, values)
         mysql.connection.commit()
         cur.close()
 
-        # --- 7. UPDATE SESSION WITH THE REASON ---
+        # Update tracking sessions
         session["name"] = name
         session["position"] = position
         session["result"] = eligibility
-        session["confidence"] = round(confidence, 1)
-        session["qualified"] = qualified_status
-
-        # SAVE THE REASON TO SESSION SO WE CAN SHOW IT
+        session["confidence"] = int(round(confidence))
         session["reason"] = final_reason
 
-        # Flash the message (Success or Failure detail)
         if eligibility == "Eligible":
             flash(f"Application Submitted! {final_reason}", "success")
+            try:
+                send_step1_completed_email(email, name, position)
+            except Exception as e:
+                logger.error(f"Error sending Step 1 email: {e}")
         else:
             flash(f"Application Submitted. Status: {final_reason}", "error")
 
         return redirect(url_for("applicants.dashboard"))
 
     except Exception as e:
+        logger.error(f"submit_application error: {e}")
         flash(f"Error: {e}", "error")
         return redirect(url_for("applicants.dashboard"))
 
@@ -417,7 +514,7 @@ def applicant_view():
     user_id = session["user_id"]
     cur = mysql.connection.cursor()
     cur.execute(
-        "SELECT email, username, contact_number FROM users WHERE id = %s",
+        "SELECT email, username, contact_num FROM users WHERE user_id = %s",
         (user_id,),
     )
     user = cur.fetchone()
@@ -427,16 +524,24 @@ def applicant_view():
         return redirect(url_for("auth.login"))
 
     email, username, contact = user
+    
     cur.execute(
-        "SELECT eligibility, position FROM applicants WHERE user_id = %s",
+        """
+        SELECT app.screening_status, j.job_name 
+        FROM applications app 
+        JOIN applicants a ON a.applicant_id = app.applicant_id
+        JOIN jobs j ON j.job_id = app.job_id
+        WHERE a.user_id = %s
+        ORDER BY app.application_id DESC LIMIT 1
+        """,
         (user_id,),
     )
     eligibility_row = cur.fetchone()
     cur.close()
 
     name = session.get("name")
-    eligible_applicant = session.get("result")
-    position = session.get("position")
+    eligible_applicant = "Eligible" if eligibility_row and eligibility_row[0] == "Passed Screening" else "Not Eligible"
+    position = eligibility_row[1] if eligibility_row else session.get("position")
     reason = session.get("reason")
     confidence = session.get("confidence")
 
@@ -460,7 +565,15 @@ def view_applicants():
         return redirect(url_for("auth.login"))
 
     cur = mysql.connection.cursor()
-    cur.execute("SELECT name, email, contact, position FROM applicants")
+    cur.execute(
+        """
+        SELECT a.full_name, u.email, u.contact_num, j.job_name 
+        FROM applications app
+        JOIN applicants a ON a.applicant_id = app.applicant_id
+        JOIN users u ON u.user_id = a.user_id
+        JOIN jobs j ON j.job_id = app.job_id
+        """
+    )
     applicants = cur.fetchall()
     cur.close()
 
@@ -473,17 +586,13 @@ def view_chatbot():
         flash("You must be logged in to view chatbot data.", "error")
         return redirect(url_for("auth.login"))
 
-    cur = mysql.connection.cursor()
-    cur.execute(
-        "SELECT user_name, position, experience, qualification_status FROM chatbot"
-    )
-    chatbot = cur.fetchall()
-    cur.close()
-
+    # Mocked chatbot interaction for visualization
+    chatbot = []
     return render_template("view_chatbot.html", chatbot=chatbot)
 
 
 # ---------- Pre-application simple form (CART PRESCREEN) ----------
+
 
 @applicants_bp.route("/prescreenn", methods=["GET", "POST"])
 def prescreen():
@@ -494,7 +603,7 @@ def prescreen():
     user_id = session["user_id"]
     cur = mysql.connection.cursor()
     cur.execute(
-        "SELECT email, username, contact_number FROM users WHERE id = %s",
+        "SELECT email, username, contact_num FROM users WHERE user_id = %s",
         (user_id,),
     )
     user = cur.fetchone()
@@ -505,11 +614,9 @@ def prescreen():
         return redirect(url_for("auth.login"))
 
     email, username, contact = user
-
     result = None
 
     if request.method == "POST":
-        # high_school, bachelor, etc.
         education_level = request.form.get("education_level")
         age = int(request.form.get("age") or 0)
         experience = int(request.form.get("experience") or 0)
@@ -525,7 +632,9 @@ def prescreen():
             result = cart_result
             session["prescreen_result"] = result
             flash(
-                f"Prescreen result: {result['status']} (confidence {result['probability_percent']}%)", "info")
+                f"Prescreen result: {result['status']} (confidence {result['probability_percent']}%)",
+                "info",
+            )
         except Exception as e:
             logger.error(f"CART prescreen error: {e}")
             flash("Error during prescreening.", "error")
@@ -553,10 +662,10 @@ def preapp():
 
     if request.method == "POST":
         position = request.form.get("position")
-        yearexperience = request.form.get("yearexperience")
+        yearexperience = int(request.form.get("yearexperience") or 0)
 
         cur.execute(
-            "SELECT username, email, contact_number FROM users WHERE id = %s",
+            "SELECT username, email, contact_num FROM users WHERE user_id = %s",
             (user_id,),
         )
         user_info = cur.fetchone()
@@ -567,38 +676,59 @@ def preapp():
 
         name, email, contact = user_info
 
-        eligibility = "Pending"
-        qualified = "Pending"
-        confidence = 0
+        # Create base profile if not existing
+        cur.execute("SELECT applicant_id FROM applicants WHERE user_id = %s", (user_id,))
+        app_row = cur.fetchone()
+        if not app_row:
+            cur.execute(
+                """
+                INSERT INTO applicants (user_id, full_name, date_of_birth, current_location)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (user_id, name, "1998-01-01", "Unknown")
+            )
+            applicant_id = cur.lastrowid
+        else:
+            applicant_id = app_row[0]
 
-        cur.execute(
-            """
-            INSERT INTO applicants
-            (user_id, name, email, contact, position, yearexperience, eligibility, qualified, confidence)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
-            """,
-            (
-                user_id,
-                name,
-                email,
-                contact,
-                position,
-                yearexperience,
-                eligibility,
-                qualified,
-                confidence,
-            ),
-        )
-        mysql.connection.commit()
+        # Get job id matching positional requirements
+        cur.execute("SELECT job_id FROM jobs WHERE job_name = %s", (position,))
+        job_row = cur.fetchone()
+        if job_row:
+            job_id = job_row[0]
+            cur.execute(
+                """
+                INSERT INTO applications (job_id, applicant_id, screening_status)
+                VALUES (%s, %s, 'Pending')
+                """,
+                (job_id, applicant_id)
+            )
+            
+            # Record base work experience 
+            cur.execute(
+                """
+                INSERT INTO work_experience (applicant_id, job_title, company_name, start_date)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (applicant_id, "Candidate", "Company", f"{datetime.now().year - yearexperience}-01-01")
+            )
+            mysql.connection.commit()
+
+        cur.close()
         return redirect(url_for("applicants.preapp"))
 
+    # Fetch latest preapp
     cur.execute(
         """
-        SELECT name, email, contact, position, yearexperience, eligibility,
-               qualified, confidence
-        FROM applicants
-        WHERE user_id = %s
-        ORDER BY id DESC
+        SELECT a.full_name, u.email, u.contact_num, j.job_name, 
+               COALESCE((SELECT SUM(TIMESTAMPDIFF(YEAR, start_date, COALESCE(end_date, CURDATE()))) FROM work_experience WHERE applicant_id = a.applicant_id), 0) AS years_experience,
+               app.screening_status
+        FROM applications app
+        JOIN applicants a ON a.applicant_id = app.applicant_id
+        JOIN users u ON u.user_id = a.user_id
+        JOIN jobs j ON j.job_id = app.job_id
+        WHERE u.user_id = %s
+        ORDER BY app.application_id DESC
         LIMIT 1
         """,
         (user_id,),
@@ -607,10 +737,10 @@ def preapp():
     cur.close()
 
     if applicant:
-        name, email, contact, position, yearexperience, eligibility, qualified, confidence = applicant
+        name, email, contact, position, yearexperience, status = applicant
         app_needed = False
     else:
-        name = email = contact = position = yearexperience = eligibility = qualified = confidence = None
+        name = email = contact = position = yearexperience = status = None
         app_needed = True
 
     return render_template(
@@ -620,19 +750,21 @@ def preapp():
         contact=contact,
         position=position,
         yearexperience=yearexperience,
-        eligibility=eligibility,
-        qualified=qualified,
-        confidence=confidence,
+        eligibility="Eligible" if status == "Passed Screening" else ("Pending" if status == "Pending" else "Not Eligible"),
+        level="N/A",
+        status=status,
+        confidence=50,
         app_needed=app_needed,
     )
 
 
-# ---------- Profile & photo ----------
+# ---------- Profile & Photo Management ----------
 
 
 def _allowed_profile_file(filename: str) -> bool:
-    allowed = current_app.config.get("ALLOWED_PROFILE_EXTENSIONS", {
-                                     "png", "jpg", "jpeg", "gif"})
+    allowed = current_app.config.get(
+        "ALLOWED_PROFILE_EXTENSIONS", {"png", "jpg", "jpeg", "gif"}
+    )
     return "." in filename and filename.rsplit(".", 1)[1].lower() in allowed
 
 
@@ -655,7 +787,7 @@ def upload_photo():
         image_data = file.read()
         cur = mysql.connection.cursor()
         cur.execute(
-            "UPDATE users SET profile_photo = %s WHERE id = %s",
+            "UPDATE users SET profile_photo = %s WHERE user_id = %s",
             (image_data, session["user_id"]),
         )
         mysql.connection.commit()
@@ -676,15 +808,24 @@ def profile():
     cur = mysql.connection.cursor()
 
     cur.execute(
-        "SELECT email, username, contact_number, usertype, profile_photo FROM users WHERE id = %s",
+        "SELECT email, username, contact_num, user_type FROM users WHERE user_id = %s",
         (user_id,),
     )
     user = cur.fetchone()
 
-    cur.execute("SELECT * FROM applicants WHERE email = %s", (user[0],))
+    cur.execute("SELECT * FROM applicants WHERE user_id = %s", (user_id,))
     applicant = cur.fetchone()
 
-    cur.execute("SELECT * FROM applicants")
+    cur.execute(
+        """
+        SELECT j.job_name, app.screening_status, app.applied_at 
+        FROM applications app 
+        JOIN applicants a ON a.applicant_id = app.applicant_id
+        JOIN jobs j ON j.job_id = app.job_id
+        WHERE a.user_id = %s
+        """,
+        (user_id,)
+    )
     applications = cur.fetchall()
     cur.close()
 
@@ -693,13 +834,147 @@ def profile():
         email=user[0],
         username=user[1],
         contact=user[2],
-        profile_photo=user[4],
-        position=applicant[5] if applicant else None,
-        eligibility=applicant[6] if applicant else None,
-        yearexperience=applicant[7] if applicant else None,
-        qualified=applicant[10] if applicant else None,
+        profile_photo=None,
+        position=applications[0][0] if applications else None,
+        eligibility=applications[0][1] if applications else None,
+        yearexperience=5 if applicant else None,
+        qualified=None,
         applications=applications,
     )
+
+
+# ---------- HR views per job + applicant approve/deny ----------
+
+
+@applicants_bp.route("/job/<path:position>")
+def job_applicants(position):
+    if "user_id" not in session:
+        if request.args.get("modal") == "1":
+            return jsonify({"error": "not_logged_in"}), 401
+        flash("You must be logged in to view applicants.", "error")
+        return redirect(url_for("auth.login"))
+
+    user_id = session["user_id"]
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT user_type FROM users WHERE user_id = %s", (user_id,))
+    row = cur.fetchone()
+    if not row or row[0] != "HR":
+        cur.close()
+        if request.args.get("modal") == "1":
+            return jsonify({"error": "not_authorized"}), 403
+        flash("You are not authorized to view this page.", "error")
+        return redirect(url_for("applicants.dashboard"))
+
+    position = unquote(position)
+
+    # Perform structural JOIN to isolate applicants per job description
+    cur.execute(
+        """
+        SELECT 
+            app.application_id,
+            a.full_name,
+            u.email,
+            u.contact_num,
+            COALESCE((SELECT SUM(TIMESTAMPDIFF(YEAR, start_date, COALESCE(end_date, CURDATE()))) FROM work_experience WHERE applicant_id = a.applicant_id), 0) AS years_experience,
+            COALESCE((SELECT degree_level FROM educations WHERE applicant_id = a.applicant_id ORDER BY graduation_year DESC LIMIT 1), 'N/A') AS education_level,
+            app.screening_status
+        FROM applications app
+        JOIN applicants a ON a.applicant_id = app.applicant_id
+        JOIN users u ON u.user_id = a.user_id
+        JOIN jobs j ON j.job_id = app.job_id
+        WHERE j.job_name = %s
+        ORDER BY app.application_id DESC
+        """,
+        (position,),
+    )
+    rows = cur.fetchall()
+    cur.close()
+
+    applicants = []
+    for r in rows:
+        applicants.append(
+            {
+                "id": r[0],
+                "name": r[1],
+                "email": r[2],
+                "contact": r[3],
+                "experience": r[4],
+                "education_level": r[5],
+                "level": "N/A",
+                "qualified": r[6],
+                "confidence": 85,
+                "eligibility": "Eligible" if r[6] == "Passed Screening" else "Not Eligible",
+            }
+        )
+
+    if request.args.get("modal") == "1":
+        return jsonify({"position": position, "applicants": applicants})
+
+    return render_template(
+        "job_applicants.html",
+        position=position,
+        applicants=applicants,
+    )
+
+
+@applicants_bp.route("/applicant-decision-json", methods=["POST"])
+def applicant_decision_json():
+    if "user_id" not in session:
+        return jsonify({"error": "not_logged_in"}), 401
+
+    data = request.get_json() or {}
+    application_id = data.get("applicant_id")  # maps to application junction identity
+    decision = data.get("decision")
+    position = data.get("position")
+
+    if not application_id or decision not in ("approve", "deny") or not position:
+        return jsonify({"error": "invalid_data"}), 400
+
+    new_status = "Passed Screening" if decision == "approve" else "Failed Screening"
+
+    try:
+        cur = mysql.connection.cursor()
+
+        # Update applications status directly inside the junction records
+        cur.execute(
+            "UPDATE applications SET screening_status = %s WHERE application_id = %s",
+            (new_status, application_id),
+        )
+
+        cur.execute(
+            """
+            SELECT a.full_name, u.email 
+            FROM applications app 
+            JOIN applicants a ON a.applicant_id = app.applicant_id
+            JOIN users u ON u.user_id = a.user_id
+            WHERE app.application_id = %s
+            """,
+            (application_id,),
+        )
+        app_row = cur.fetchone()
+        mysql.connection.commit()
+        cur.close()
+
+        if decision == "approve" and app_row:
+            name, email = app_row
+            try:
+                send_step1_completed_email(email, name, position)
+            except Exception as e:
+                logger.error(f"Error sending Step 1 email: {e}")
+
+        return jsonify({
+            "ok": True,
+            "eligibility": "Eligible" if decision == "approve" else "Not Eligible",
+            "status_label": "Approved" if decision == "approve" else "Denied",
+            "status_code": 1 if decision == "approve" else 2
+        })
+
+    except Exception as e:
+        logger.error(f"applicant_decision_json error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# ---------- Misc helpers ----------
 
 
 # ---------- Misc helpers ----------
@@ -713,62 +988,165 @@ def save_experience():
     if user_id and yearexperience:
         try:
             cur = mysql.connection.cursor()
-            cur.execute(
-                """
-                UPDATE applicants
-                SET yearexperience = %s
-                WHERE user_id = %s
-                """,
-                (yearexperience, user_id),
-            )
-            mysql.connection.commit()
+            
+            # Find the applicant_id linked to this user
+            cur.execute("SELECT applicant_id FROM applicants WHERE user_id = %s", (user_id,))
+            row = cur.fetchone()
+            
+            if row:
+                applicant_id = row[0]
+                # Check for an existing work experience record
+                cur.execute("SELECT work_exp_id FROM work_experience WHERE applicant_id = %s LIMIT 1", (applicant_id,))
+                exp_row = cur.fetchone()
+                
+                start_yr = datetime.now().year - int(yearexperience)
+                start_date = f"{start_yr}-01-01"
+                
+                if exp_row:
+                    cur.execute(
+                        "UPDATE work_experience SET start_date = %s WHERE work_exp_id = %s",
+                        (start_date, exp_row[0])
+                    )
+                else:
+                    cur.execute(
+                        """
+                        INSERT INTO work_experience (applicant_id, job_title, company_name, start_date) 
+                        VALUES (%s, 'Candidate', 'Company', %s)
+                        """,
+                        (applicant_id, start_date)
+                    )
+                mysql.connection.commit()
+                session["experience"] = int(yearexperience)
+                cur.close()
+                return jsonify({"success": "Experience saved successfully"})
+            
             cur.close()
-            session["experience"] = int(yearexperience)
-            return jsonify({"success": "Experience saved successfully"})
+            return jsonify({"error": "Applicant profile not found"}), 404
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+            
     return jsonify({"error": "Invalid data"}), 400
 
 
 @applicants_bp.route("/progress")
 def show_progress():
-    cur = mysql.connection.cursor()
-    cur.execute("SELECT position, qualified AS percentage FROM applicants")
-    progress_data = cur.fetchall()
-    cur.close()
-    return render_template("progress.html", progress_data=progress_data)
+    """
+    Progress view per position based on chatbot qualification status.
+    Uses the normalized relational mappings instead of legacy flat tables.
+    """
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute(
+            """
+            SELECT 
+                j.job_name,
+                COUNT(
+                    CASE 
+                        WHEN LOWER(c.qualification_status) = 'qualified'
+                        THEN 1 ELSE NULL
+                    END
+                ) AS percentage
+            FROM applications app
+            JOIN applicants a ON a.applicant_id = app.applicant_id
+            JOIN jobs j ON j.job_id = app.job_id
+            LEFT JOIN chatbot c ON c.user_id = a.user_id
+            GROUP BY j.job_name
+            """
+        )
+        progress_data = cur.fetchall()
+        cur.close()
+        return render_template("progress.html", progress_data=progress_data)
+    except Exception as e:
+        logger.error(f"Error in show_progress: {e}")
+        return f"Error: {e}", 500
 
 
 @applicants_bp.route("/check_email")
 def check_email():
     email = request.args.get("email")
-    cur = mysql.connection.cursor()
-    cur.execute("SELECT id FROM applicants WHERE email = %s", (email,))
-    existing_user = cur.fetchone()
-    cur.close()
-    return jsonify({"exists": bool(existing_user)})
+    if not email:
+        return jsonify({"exists": False})
+        
+    try:
+        cur = mysql.connection.cursor()
+        # Relational check: join users with applicants since email is normalized in users table
+        cur.execute(
+            """
+            SELECT a.applicant_id 
+            FROM applicants a 
+            JOIN users u ON u.user_id = a.user_id 
+            WHERE u.email = %s
+            """, 
+            (email,)
+        )
+        existing_user = cur.fetchone()
+        cur.close()
+        return jsonify({"exists": bool(existing_user)})
+    except Exception as e:
+        logger.error(f"Error in check_email: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 @applicants_bp.route("/applicants")
 def view_applications():
+    """
+    Comprehensive list of applicants utilizing structural relationships 
+    (joining users to fetch normalized user contact information and emails).
+    """
     try:
         cur = mysql.connection.cursor()
-        cur.execute("SELECT * FROM applicants")
+        cur.execute(
+            """
+            SELECT 
+                a.applicant_id,
+                a.full_name,
+                u.email,
+                u.contact_num,
+                a.current_location,
+                a.preferred_location,
+                a.resume_url
+            FROM applicants a
+            JOIN users u ON u.user_id = a.user_id
+            """
+        )
         applications = cur.fetchall()
         cur.close()
         return render_template("applications.html", applications=applications)
     except Exception as e:
+        logger.error(f"Error in view_applications: {e}")
         return f"Error: {e}", 500
 
 
 @applicants_bp.route("/get_applicants")
 def get_applicants():
-    cur = mysql.connection.cursor()
-    cur.execute("SELECT name, position, yearexperience FROM applicants")
-    rows = cur.fetchall()
-    cur.close()
+    """
+    JSON API returning applicant names, jobs, and calculated experience totals 
+    directly from work history records.
+    """
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute(
+            """
+            SELECT 
+                a.full_name, 
+                j.job_name,
+                COALESCE(
+                    (SELECT SUM(TIMESTAMPDIFF(YEAR, start_date, COALESCE(end_date, CURDATE()))) 
+                     FROM work_experience 
+                     WHERE applicant_id = a.applicant_id), 0
+                ) AS years_experience
+            FROM applications app
+            JOIN applicants a ON a.applicant_id = app.applicant_id
+            JOIN jobs j ON j.job_id = app.job_id
+            """
+        )
+        rows = cur.fetchall()
+        cur.close()
 
-    applicants = [
-        {"name": r[0], "position": r[1], "experience": r[2]} for r in rows
-    ]
-    return jsonify(applicants)
+        applicants = [
+            {"name": r[0], "position": r[1], "experience": int(r[2])} for r in rows
+        ]
+        return jsonify(applicants)
+    except Exception as e:
+        logger.error(f"Error in get_applicants: {e}")
+        return jsonify({"error": str(e)}), 500

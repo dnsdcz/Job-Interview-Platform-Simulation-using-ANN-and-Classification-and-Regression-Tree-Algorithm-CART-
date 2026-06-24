@@ -5,127 +5,488 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Technical Interview Chatbot</title>
+
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f0f2f5;
+    :root {
+      --primary-red: #B2271B;
+      --primary-red-dark: #8a1d14;
+      --bg-page: #f3f4f6;
+      --bubble-bg: #e9eaec;
+      --bubble-border: #d1d3d6;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --warning-amber: #d97706;
+    }
+
+    * {
+      box-sizing: border-box;
       margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      background: var(--bg-page);
+      color: var(--text-main);
     }
 
     .container {
-      max-width: 900px;
-      margin: 30px auto;
-      padding: 20px;
+      width: 100%;
+      max-width: 760px;
+      background: #ffffff;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.14);
+      display: flex;
+      flex-direction: column;
     }
 
-    .chatbot-header {
-      background-color: #001f4d;
-      color: white;
-      padding: 20px;
-      border-radius: 12px 12px 0 0;
+    /* ---------- Warning banner ---------- */
+    .warning-banner {
+      padding: 14px 20px 16px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .warning-title {
       display: flex;
       align-items: center;
-      gap: 15px;
+      gap: 8px;
+      color: var(--primary-red);
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
     }
 
-    .chatbot-header img {
-      width: 50px;
-      height: 50px;
+    .warning-title i {
+      font-size: 15px;
     }
 
-    .chatbot-header h2 {
-      margin: 0;
-      font-size: 1.8em;
+    .warning-list {
+      list-style: disc;
+      margin-left: 18px;
+      font-size: 12.5px;
+      color: #374151;
+      line-height: 1.7;
     }
 
-    .user-info {
-      background-color: white;
-      border: 1px solid #cce4f7;
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 20px;
-      color: #001f4d;
+    .warning-list strong {
+      color: var(--primary-red);
     }
 
-    .info-row {
-      margin: 8px 0;
+    /* ---------- Header bar ---------- */
+    .interview-header {
+      background: linear-gradient(135deg, var(--primary-red), var(--primary-red-dark));
+      color: #ffffff;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
-    .info-label {
-      font-weight: bold;
+    .interview-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
     }
 
-    .chat-area {
-      background-color: white;
-      border-radius: 8px;
-      border: 1px solid #ddd;
-      padding: 20px;
+    .job-title {
+      font-size: 17px;
+      font-weight: 700;
     }
 
-    .chat-content {
-      height: 350px;
+    .timer {
+      font-size: 17px;
+      font-weight: 700;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 1px;
+    }
+
+    .timer.low-time {
+      color: #fde68a;
+    }
+
+    .header-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 18px;
+      font-size: 12.5px;
+      color: rgba(255, 255, 255, 0.92);
+    }
+
+    .header-meta span strong {
+      font-weight: 600;
+    }
+
+    .back-link {
+      position: absolute;
+      display: none;
+    }
+
+    /* ---------- Chat window ---------- */
+    .chat-window {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #ffffff;
+      min-height: 380px;
+      position: relative;
+    }
+
+    .chat-welcome {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 2;
+      background: rgba(255, 255, 255, 0.98);
+    }
+
+    .welcome-card {
+      max-width: 460px;
+      width: 100%;
+      text-align: center;
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 22px 20px 18px;
+      box-shadow: 0 16px 38px rgba(178, 39, 27, 0.18);
+      border: 1px solid #f3d6d2;
+    }
+
+    .welcome-hello {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .welcome-title {
+      font-size: 19px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .welcome-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+      line-height: 1.55;
+    }
+
+    .welcome-desc span {
+      font-weight: 600;
+      color: var(--primary-red-dark);
+    }
+
+    .welcome-buttons {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+
+    .btn-primary {
+      border: none;
+      padding: 10px 20px;
+      border-radius: 999px;
+      background: var(--primary-red);
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 10px 22px rgba(178, 39, 27, 0.35);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-red-dark);
+    }
+
+    .btn-ghost {
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+      padding: 9px 16px;
+      background: #ffffff;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #111827;
+    }
+
+    .btn-ghost:hover {
+      background: #f9fafb;
+    }
+
+    .welcome-note {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .welcome-note span {
+      font-weight: 600;
+      color: var(--primary-red);
+    }
+
+    #chat-content {
+      flex: 1;
+      padding: 22px 22px 12px;
       overflow-y: auto;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      padding: 10px;
-      background-color: #fafafa;
-      margin-bottom: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
     }
 
-    .message {
-      margin-bottom: 10px;
-      padding: 10px;
-      border-radius: 8px;
-      max-width: 75%;
+    .message-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      max-width: 86%;
     }
 
-    .bot {
-      background-color: #d9e6f2;
-      color: #001f4d;
+    .message-row.bot {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+
+    .message-row.user {
       align-self: flex-start;
     }
 
-    .user {
-      background-color: #cce0ff;
-      text-align: right;
-      align-self: flex-end;
-      color: #001f4d;
+    .avatar {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      color: #ffffff;
+    }
+
+    .avatar.user-avatar {
+      background: var(--primary-red);
+    }
+
+    .avatar.bot-avatar {
+      background: #374151;
+    }
+
+    .message {
+      padding: 12px 16px;
+      border-radius: 10px;
+      background: var(--bubble-bg);
+      border: 1px solid var(--bubble-border);
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--text-main);
+    }
+
+    .message-row.bot .message {
+      background: var(--bubble-bg);
+    }
+
+    .message-row.user .message {
+      background: var(--bubble-bg);
+    }
+
+    /* ---------- Input row ---------- */
+    .input-row {
+      padding: 14px 20px 18px;
+      border-top: 1px solid #e5e7eb;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .input-hint {
+      font-size: 11px;
+      color: var(--text-muted);
     }
 
     .input-area {
       display: flex;
+      align-items: center;
       gap: 10px;
     }
 
-    input[type="text"] {
+    #answer-input {
       flex: 1;
-      padding: 10px;
-      border-radius: 4px;
-      border: 1px solid #001f4d;
-      color: #001f4d;
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      background: #f9fafb;
+      font-size: 14px;
+      outline: none;
     }
 
-    button {
-      padding: 10px 15px;
-      border: none;
-      border-radius: 4px;
-      background-color: #001f4d;
-      color: white;
-      cursor: pointer;
+    #answer-input:focus {
+      border-color: var(--primary-red);
+      background: #ffffff;
+      box-shadow: 0 0 0 2px rgba(178, 39, 27, 0.15);
     }
 
-    button:disabled {
-      background-color: #a0a0a0;
+    #answer-input:disabled {
+      background: #f3f4f6;
       cursor: not-allowed;
     }
 
-    #save-container,
-    #summary-link,
-    #final-result {
+    .send-btn {
+      border: none;
+      border-radius: 10px;
+      width: 42px;
+      height: 42px;
+      background: var(--primary-red);
+      color: #ffffff;
+      font-size: 15px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .send-btn:hover:not(:disabled) {
+      background: var(--primary-red-dark);
+    }
+
+    .send-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    /* ---------- Footer actions (results) ---------- */
+    .footer-actions {
+      padding: 0 20px 18px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .footer-actions button {
+      border-radius: 999px;
+      padding: 9px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid #d1d5db;
+      background: #ffffff;
+      color: var(--primary-red-dark);
+    }
+
+    .footer-actions button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ---------- Modals ---------- */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
       display: none;
-      margin-top: 20px;
-      color: #001f4d;
+      align-items: center;
+      justify-content: center;
+      z-index: 40;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal {
+      max-width: 480px;
+      width: 92%;
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 18px 20px 16px;
+      box-shadow: 0 24px 65px rgba(0, 0, 0, 0.4);
+      border: 1px solid #f3d6d2;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .modal-header h3 {
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-header h3 i {
+      color: var(--warning-amber);
+    }
+
+    .modal-close {
+      border: none;
+      background: #fee2e2;
+      border-radius: 999px;
+      width: 26px;
+      height: 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #7f1d1d;
+      font-size: 13px;
+    }
+
+    .modal-body {
+      font-size: 13px;
+      color: #374151;
+    }
+
+    .modal-body p {
+      margin-bottom: 8px;
+    }
+
+    .modal-body ul {
+      margin-left: 18px;
+      margin-top: 4px;
+      margin-bottom: 10px;
+    }
+
+    .modal-body li {
+      margin-bottom: 4px;
+    }
+
+    .modal-footnote {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 6px;
+    }
+
+    @media (max-width: 600px) {
+      .interview-header-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+      }
+
+      .message-row {
+        max-width: 96%;
+      }
     }
   </style>
 </head>
@@ -133,56 +494,252 @@
 <body>
   <div class="container">
 
-    <!-- Header -->
-    <div class="chatbot-header">
-      <img src="{{ url_for('static', filename='icon.png') }}" alt="Chatbot Icon" />
-      <h2>AceView</h2>
-      {% if name %}
-      <p class="user-welcome">Welcome, {{ name }}!</p>
-      {% endif %}
+    <!-- ===== Warning banner (matches reference UI) ===== -->
+    <div class="warning-banner">
+      <div class="warning-title">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        Important
+      </div>
+      <ul class="warning-list">
+        <li>Don't open any other tabs, as it may disqualify you.</li>
+        <li>Copy and pasting is not allowed.</li>
+        <li>There's a time limit located on the right side of the screen.</li>
+        <li>You only have <strong id="warningLimit">3</strong> warnings before the interview gets closed.</li>
+      </ul>
     </div>
 
-    <!-- Applicant Info -->
-    <div class="user-info">
-      <div class="info-row"><span class="info-label">Name:</span> {{ name }}</div>
-      <div class="info-row"><span class="info-label">Experience:</span> {{ experience }} years</div>
-      <div class="info-row"><span class="info-label">Position:</span> {{ position }}</div>
-      <input type="hidden" id="user_id" value="{{ user_id }}" />
-    </div>
-
-    <!-- 🔥 RESUME SECTION REMOVED -->
-
-    <!-- Chat Section -->
-    <div class="chat-area">
-      <div class="chat-content" id="chat-content"></div>
-      <div class="input-area">
-        <input type="text" id="answer-input" placeholder="Type your answer here..." disabled />
-        <button id="submit-btn" onclick="submitAnswer()" disabled>Submit</button>
+    <!-- ===== Red header bar: job + timer + applicant ===== -->
+    <div class="interview-header">
+      <div class="interview-header-row">
+        <div class="job-title">Job {{ position }}</div>
+        <div class="timer" id="interviewTimer">00:10:00</div>
+      </div>
+      <div class="header-meta">
+        <span>Applicant: <strong>{{ name }}</strong></span>
+        <span>Chatbot Interview</span>
       </div>
     </div>
 
-    <div id="final-result"></div>
+    <div class="chat-window">
+      <div class="chat-welcome" id="chatWelcome">
+        <div class="welcome-card">
+          <p class="welcome-hello">Hi {{ name }}, 👋</p>
+          <p class="welcome-title">Get started with your mock interview</p>
+          <p class="welcome-desc">
+            Questions will appear <span>one by one</span> based on your
+            role and experience. Once you move to the next question, you
+            won't be able to edit previous answers.
+          </p>
 
-    <div id="save-container">
-      <button id="save" onclick="saveInterviewSummary()" disabled>Save Result</button>
-      <button id="view-summary">View Summary</button>
+          <div class="welcome-buttons">
+            <button type="button" class="btn-primary" id="startInterviewBtn">
+              <i class="fa-solid fa-play"></i>
+              Start interview
+            </button>
+          </div>
+
+          <p class="welcome-note">
+            <span>Caution:</span> This chatbot is for job mock interview practice.
+            Treat each question seriously, answer in your own words, and avoid
+            sharing sensitive or confidential information.
+          </p>
+        </div>
+      </div>
+
+      <div id="chat-content"></div>
     </div>
 
-    <div id="summary-link">
+    <div class="input-row">
+      <div class="input-hint" id="inputHint">
+        Waiting for you to start the interview…
+      </div>
+      <div class="input-area">
+        <input type="text" id="answer-input" placeholder="Type your answer here..." disabled />
+        <button id="submit-btn" class="send-btn" onclick="submitAnswer()" disabled>
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+
+    <div id="final-result" style="display:none;"></div>
+    <div id="save-container" class="footer-actions" style="display:none;">
+      <button id="save" disabled>Save Result</button>
+      <button id="view-summary">View Summary</button>
+    </div>
+    <div id="summary-link" class="footer-actions" style="display:none;">
       <button id="generate-pdf">Generate PDF</button>
       <button id="download-summary">Download .docx</button>
     </div>
 
-    <!-- Hidden fields used for backend summary -->
+    <!-- hidden fields for JS -->
+    <input type="hidden" id="user_id" value="{{ user_id }}" />
     <input type="hidden" id="input-status" />
     <input type="hidden" id="input-advice" />
     <input type="hidden" id="input-assessment" />
     <input type="hidden" id="input-confidence" />
     <input type="hidden" id="input-score" />
+    <input type="hidden" id="candidate-name" value="{{ name }}">
+    <input type="hidden" id="candidate-position" value="{{ position }}">
+    <input type="hidden" id="candidate-experience" value="{{ experience }}">
+  </div>
 
+  <!-- Result modal (no X close) -->
+  <div class="modal-backdrop" id="resultModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="resultTitle">
+          <i class="fa-regular fa-circle-check"></i>
+          Interview result
+        </h3>
+      </div>
+      <div class="modal-body">
+        <p id="resultStatusText"><strong>Status:</strong> —</p>
+        <p id="resultPercentageText"><strong>Match score:</strong> —</p>
+        <p id="resultSuggestionText" style="margin-top: 8px;"></p>
+
+        <div style="margin-top: 14px; display:flex; gap:8px; flex-wrap:wrap;">
+          <button type="button" class="btn-primary" id="resultViewSummary">
+            <i class="fa-regular fa-file-lines"></i>
+            View summary report
+          </button>
+          <button type="button" class="btn-ghost" id="resultDoneBtn" data-redirect-url="/dashboard">
+            Done – back to overview
+          </button>
+        </div>
+
+        <p class="modal-footnote" style="margin-top:10px;">
+          You can review your detailed scores and advice in the summary report.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Disqualification modal (tab switch / paste / time up) -->
+  <div class="modal-backdrop" id="disqualifyModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          Interview ended
+        </h3>
+      </div>
+      <div class="modal-body">
+        <p id="disqualifyText">You've reached the maximum number of warnings and the interview has been closed.</p>
+        <div style="margin-top: 14px;">
+          <button type="button" class="btn-ghost" id="disqualifyDoneBtn" data-redirect-url="/dashboard">
+            Back to dashboard
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="/static/chatbot.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const startBtn = document.getElementById('startInterviewBtn');
+      const welcome = document.getElementById('chatWelcome');
+      const answerInput = document.getElementById('answer-input');
+      const submitBtn = document.getElementById('submit-btn');
+      const inputHint = document.getElementById('inputHint');
+      const timerEl = document.getElementById('interviewTimer');
+      const disqualifyModal = document.getElementById('disqualifyModal');
+      const disqualifyText = document.getElementById('disqualifyText');
+
+      const MAX_WARNINGS = 3;
+      const INTERVIEW_SECONDS = 10 * 60; // 00:10:00
+      let warningCount = 0;
+      let interviewActive = false;
+      let remainingSeconds = INTERVIEW_SECONDS;
+      let timerInterval = null;
+
+      document.getElementById('warningLimit').textContent = MAX_WARNINGS;
+
+      function formatTime(totalSeconds) {
+        const h = Math.floor(totalSeconds / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = totalSeconds % 60;
+        return [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
+      }
+
+      function updateTimerDisplay() {
+        if (!timerEl) return;
+        timerEl.textContent = formatTime(remainingSeconds);
+        timerEl.classList.toggle('low-time', remainingSeconds <= 60);
+      }
+
+      function endInterview(reason) {
+        interviewActive = false;
+        if (timerInterval) clearInterval(timerInterval);
+        if (answerInput) answerInput.disabled = true;
+        if (submitBtn) submitBtn.disabled = true;
+        if (disqualifyText) disqualifyText.textContent = reason;
+        if (disqualifyModal) disqualifyModal.classList.add('show');
+      }
+
+      function startTimer() {
+        timerInterval = setInterval(() => {
+          remainingSeconds--;
+          updateTimerDisplay();
+          if (remainingSeconds <= 0) {
+            endInterview("Time's up. The interview has ended automatically.");
+          }
+        }, 1000);
+      }
+
+      function startInterviewUI() {
+        if (welcome) welcome.style.display = 'none';
+        if (answerInput) {
+          answerInput.disabled = false;
+          answerInput.focus();
+        }
+        if (submitBtn) submitBtn.disabled = false;
+        if (inputHint) {
+          inputHint.textContent = 'Interview in progress… answer carefully before sending.';
+        }
+
+        interviewActive = true;
+        updateTimerDisplay();
+        startTimer();
+
+        if (typeof window.startInterview === 'function') {
+          window.startInterview();
+        }
+      }
+
+      if (startBtn) {
+        startBtn.addEventListener('click', startInterviewUI);
+      }
+
+      // Tab-switch / window-blur warning tracking
+      document.addEventListener('visibilitychange', function () {
+        if (!interviewActive) return;
+        if (document.hidden) {
+          warningCount++;
+          if (warningCount >= MAX_WARNINGS) {
+            endInterview('You exceeded the allowed number of tab-switch warnings. The interview has been closed.');
+          } else if (inputHint) {
+            inputHint.textContent = `Warning ${warningCount}/${MAX_WARNINGS}: switching tabs may disqualify you.`;
+          }
+        }
+      });
+
+      // Disable copy/paste in the answer field
+      if (answerInput) {
+        ['paste', 'copy', 'cut'].forEach(evt => {
+          answerInput.addEventListener(evt, e => e.preventDefault());
+        });
+      }
+
+      // Redirect buttons
+      document.querySelectorAll('[data-redirect-url]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          window.location.href = btn.dataset.redirectUrl;
+        });
+      });
+    });
+  </script>
 </body>
 
 </html>

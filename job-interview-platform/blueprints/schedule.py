@@ -1,58 +1,73 @@
 # blueprints/schedule.py
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import (
+    Blueprint,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    flash,
+)
 import json
 from extensions import mysql
 
 schedule_bp = Blueprint("schedule", __name__)
 
 
-@schedule_bp.route("/schedule")
-def schedule_page():
+def get_progress_data():
+    """
+    Reusable helper that returns a list of dicts like:
+    {
+        "position": "Business Analyst",
+        "current": 5,
+        "max_allowed": 10,
+        "percent": 50
+    }
+    """
     cur = mysql.connection.cursor()
 
-    # Fetch limits
-    cur.execute("SELECT position, max_allowed FROM position_limits")
-    position_limits = cur.fetchall()
-
-    cur.execute("SELECT position, max_allowed FROM chatbot_limits")
-    chatbot_limits = cur.fetchall()
-
-    # Fetch current applicant counts
     cur.execute(
-        "SELECT position, COUNT(*) as current_count FROM applicants GROUP BY position"
+        """
+        SELECT j.job_name, j.max_applicants, COUNT(a.id) AS current_count
+        FROM jobs j
+        LEFT JOIN applications a ON a.job_id = j.id
+        GROUP BY j.id, j.job_name, j.max_applicants
+        ORDER BY j.job_name ASC
+        """
     )
-    counts = {row[0]: row[1] for row in cur.fetchall()}
-
+    rows = cur.fetchall()
     progress_data = []
-    for pos, max_allowed in position_limits:
-        current = counts.get(pos, 0)
-        # Prevent division by zero
-        percent = int((current / max_allowed) *
-                      100) if max_allowed and max_allowed > 0 else 0
-        progress_data.append(
-            {"position": pos, "current": current,
-                "max_allowed": max_allowed, "percent": percent}
-        )
 
-    for pos, max_allowed in chatbot_limits:
-        current = counts.get(pos, 0)
+    for pos, max_allowed, current in rows:
+        max_allowed = max_allowed or 0
+        current = current or 0
         percent = int((current / max_allowed) *
                       100) if max_allowed and max_allowed > 0 else 0
         progress_data.append(
-            {"position": "Chatbot Interactions", "current": current,
-                "max_allowed": max_allowed, "percent": percent}
+            {
+                "position": pos,
+                "current": current,
+                "max_allowed": max_allowed,
+                "percent": percent,
+            }
         )
 
     cur.close()
+    return progress_data
+
+
+@schedule_bp.route("/schedule")
+def schedule_page():
+    """If you still want the old blue page to work."""
+    progress_data = get_progress_data()
     return render_template("Settinghr.html", progress_data=progress_data)
 
 
-# --- NEW ROUTE FOR EXTENDED REQUIREMENTS ---
+# --- EXTENDED REQUIREMENTS (Recruitment tab & old page both use this) ---
 @schedule_bp.route("/update_requirements", methods=["POST"])
 def update_requirements():
-    print("--- DEBUG: FORM SUBMITTED ---")  # Look for this in your terminal
+    print("--- DEBUG: FORM SUBMITTED ---")
 
-    # 1. Retrieve all form fields
+    # Core
     position = request.form.get("position")
     max_allowed = request.form.get("max_allowed")
     form_access = request.form.get("form_access")
@@ -61,54 +76,98 @@ def update_requirements():
     opening_date = request.form.get("opening_date") or None
     deadline_date = request.form.get("deadline_date") or None
 
-    # Details
+    # Education & experience
     education_level = request.form.get("education_level")
     school = request.form.get("school")
+    experience_years = request.form.get("experience_years")
+
+    # Demographics & details
+    min_age = request.form.get("min_age")
     location = request.form.get("location")
     employment_type = request.form.get("employment_type")
 
-    # Numeric fields
-    experience_years = request.form.get("experience_years")
-    min_age = request.form.get("min_age")
-
-    # Convert numeric strings
+    # Safe numeric conversion
     exp_val = int(
         experience_years) if experience_years and experience_years.isdigit() else 0
     age_val = int(min_age) if min_age and min_age.isdigit() else 18
 
     print(
-        f"Received Data: Pos={position}, School={school}, Loc={location}, Open={opening_date}")
+        f"Received Data: Pos={position}, Max={max_allowed}, School={school}, Loc={location}, Open={opening_date}"
+    )
 
     if not position or not max_allowed:
         flash("Position and Max Limit are required fields.", "danger")
-        return redirect(url_for("schedule.schedule_page"))
+        # 🔁 back to where form came from (HR tab or old page)
+        return redirect(request.referrer or url_for("hr.hr_dashboard"))
 
     try:
         cur = mysql.connection.cursor()
 
-        # This query matches the columns shown in your 'select *' output + the new opening_date
-        query = """
-            INSERT INTO position_limits 
-            (position, max_allowed, form_access, opening_date, deadline_date, 
-             education_level, target_school, experience_years, min_age, location, employment_type)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON DUPLICATE KEY UPDATE 
-            max_allowed = VALUES(max_allowed),
-            form_access = VALUES(form_access),
-            opening_date = VALUES(opening_date),
-            deadline_date = VALUES(deadline_date),
-            education_level = VALUES(education_level),
-            target_school = VALUES(target_school),
-            experience_years = VALUES(experience_years),
-            min_age = VALUES(min_age),
-            location = VALUES(location),
-            employment_type = VALUES(employment_type)
-        """
+        cur.execute(
+            "SELECT id FROM educations WHERE education_name = %s",
+            (education_level,),
+        )
+        edu_row = cur.fetchone()
+        education_id = edu_row[0] if edu_row else None
 
-        cur.execute(query, (
-            position, max_allowed, form_access, opening_date, deadline_date,
-            education_level, school, exp_val, age_val, location, employment_type
-        ))
+        if not education_id and education_level:
+            cur.execute(
+                "INSERT INTO educations (education_name, cart_value) VALUES (%s, %s)",
+                (education_level, 1),
+            )
+            education_id = cur.lastrowid
+
+        cur.execute("SELECT id FROM jobs WHERE job_name = %s", (position,))
+        existing = cur.fetchone()
+
+        if existing:
+            cur.execute(
+                """
+                UPDATE jobs
+                SET max_applicants = %s,
+                    status = %s,
+                    start_date = %s,
+                    end_date = %s,
+                    required_education_id = %s,
+                    required_experience = %s,
+                    required_age = %s,
+                    description = %s
+                WHERE id = %s
+                """,
+                (
+                    max_allowed,
+                    form_access or "Open",
+                    opening_date,
+                    deadline_date,
+                    education_id,
+                    exp_val,
+                    age_val,
+                    location,
+                    existing[0],
+                ),
+            )
+        else:
+            cur.execute(
+                """
+                INSERT INTO jobs
+                (job_name, description, required_education_id, required_age,
+                 required_experience, max_applicants, start_date, end_date,
+                 status, created_by)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                """,
+                (
+                    position,
+                    location,
+                    education_id,
+                    age_val,
+                    exp_val,
+                    max_allowed,
+                    opening_date,
+                    deadline_date,
+                    form_access or "Open",
+                    None,
+                ),
+            )
 
         mysql.connection.commit()
         cur.close()
@@ -116,32 +175,39 @@ def update_requirements():
         flash(f"Requirements for {position} updated successfully!", "success")
 
     except Exception as e:
-        print(f"--- ERROR: {e} ---")  # This will show you the exact SQL error
+        print(f"--- ERROR: {e} ---")
         flash(f"Error updating requirements: {e}", "danger")
 
-    return redirect(url_for("schedule.schedule_page"))
+    # 🔁 back to HR page or wherever the form came from
+    return redirect(request.referrer or url_for("hr.hr_dashboard"))
 
 
 @schedule_bp.route("/set_pax", methods=["POST"])
 def set_pax():
     position = request.form.get("position")
     max_allowed = request.form.get("max_allowed")
+
+    if not position or not max_allowed:
+        flash("Position and Max Applicants are required.", "danger")
+        return redirect(request.referrer or url_for("hr.hr_dashboard"))
+
     try:
         cur = mysql.connection.cursor()
         cur.execute(
             """
-            INSERT INTO position_limits (position, max_allowed)
-            VALUES (%s, %s)
-            ON DUPLICATE KEY UPDATE max_allowed = VALUES(max_allowed)
+            UPDATE jobs
+            SET max_applicants = %s
+            WHERE job_name = %s
             """,
-            (position, max_allowed),
+            (max_allowed, position),
         )
         mysql.connection.commit()
         cur.close()
-        flash("Max limit set successfully!", "success")
+        flash("Max applicants limit set successfully!", "success")
     except Exception as e:
         flash(f"Error setting max limit: {e}", "danger")
-    return redirect(url_for("schedule.schedule_page"))
+
+    return redirect(request.referrer or url_for("hr.hr_dashboard"))
 
 
 @schedule_bp.route("/set_chat", methods=["POST"])
@@ -150,8 +216,8 @@ def set_chat():
     max_allowed = request.form.get("max_allowed")
 
     if not position or not max_allowed:
-        flash("All fields are required!", "error")
-        return redirect(request.referrer)
+        flash("All fields are required!", "danger")
+        return redirect(request.referrer or url_for("hr.hr_dashboard"))
 
     cur = mysql.connection.cursor()
     cur.execute("SELECT id FROM chatbot_limits WHERE position = %s", (position,))
@@ -170,7 +236,7 @@ def set_chat():
     mysql.connection.commit()
     cur.close()
     flash(f"Limit set for {position} successfully!", "success")
-    return redirect(request.referrer)
+    return redirect(request.referrer or url_for("hr.hr_dashboard"))
 
 
 @schedule_bp.route("/save_schedule", methods=["POST"])
@@ -196,4 +262,4 @@ def save_schedule():
     except Exception as e:
         flash(f"Error saving schedule: {e}", "danger")
 
-    return redirect(url_for("schedule.schedule_page"))
+    return redirect(request.referrer or url_for("hr.hr_dashboard"))

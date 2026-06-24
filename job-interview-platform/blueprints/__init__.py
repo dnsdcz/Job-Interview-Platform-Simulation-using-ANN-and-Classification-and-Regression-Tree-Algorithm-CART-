@@ -1,4 +1,5 @@
-# blueprints/__init__.py
+from .auth import auth_bp          # if you have it
+from .schedule import schedule_bp  # your schedule.py blueprint
 from flask import Blueprint
 
 from .auth import auth_bp
